@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-# Python Class to storage ROMS runs metadata
-# Rafael Soutelino - rsoutelino@gmail.com
+# Python Module to work with ROMS
+# Owner: Rafael Soutelino - rsoutelino@gmail.com
+# Committers: Andre Lobato - andrefelipelobato@gmail.com
 # Last modification: Mar, 2012
 #####################################################################
 from dateutil.parser import parse
@@ -14,8 +15,10 @@ import scipy.io as sp
 import datetime as dt
 import netCDF4 as nc
 
-
 ### CLASS RunSetup #################################################
+
+def __version__():
+    return "romslab-0.1"
 
 class RunSetup(object):
 	"""Storage ROMS runs metadata"""
