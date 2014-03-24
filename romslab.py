@@ -99,11 +99,14 @@ class RomsGrid(object):
         self.ncfile = nc.Dataset(filename, mode='r+')
         self.lonr  = self.ncfile.variables['lon_rho'][:]
         self.latr  = self.ncfile.variables['lat_rho'][:]
+        self.lonp  = self.ncfile.variables['lon_psi'][:]
+        self.latp  = self.ncfile.variables['lat_psi'][:]
         self.lonu  = self.ncfile.variables['lon_u'][:]
         self.latu  = self.ncfile.variables['lat_u'][:]
         self.lonv  = self.ncfile.variables['lon_v'][:]
         self.latv  = self.ncfile.variables['lat_v'][:]
         self.maskr = self.ncfile.variables['mask_rho'][:]
+        self.maskp = self.ncfile.variables['mask_psi'][:]
         self.masku = self.ncfile.variables['mask_u'][:]
         self.maskv = self.ncfile.variables['mask_v'][:]
     
