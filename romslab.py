@@ -657,122 +657,124 @@ def get_angle(latu,lonu,argu1='wgs84'):
 ### FUNCTION ADD_TOPO ###################################################
 
 def add_topo(lon, lat, pm, pn, toponame):
-	"""
-	################################################################
-	#
-	# add a topography (here etopo2) to a ROMS grid
-	#
-	# the topogaphy matrix is coarsened prior
-	# to the interpolation on the ROMS grid tp
-	# prevent the generation of noise due to 
-	# subsampling. this procedure ensure a better
-	# general volume conservation.
-	#
-	# Last update Pierrick Penven 8/2006.
-	#
-	#    
-	#  Further Information:  
-	#  http://www.brest.ird.fr/Roms_tools/
-	#  
-	#  This file is part of ROMSTOOLS
-	#
-	#  ROMSTOOLS is free software; you can redistribute it and/or modify
-	#  it under the terms of the GNU General Public License as published
-	#  by the Free Software Foundation; either version 2 of the License,
-	#  or (at your option) any later version.
-	#
-	#  ROMSTOOLS is distributed in the hope that it will be useful, but
-	#  WITHOUT ANY WARRANTY; without even the implied warranty of
-	#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	#  GNU General Public License for more details.
-	#
-	#  You should have received a copy of the GNU General Public License
-	#  along with this program; if not, write to the Free Software
-	#  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-	#  MA  02111-1307  USA
-	#
-	#  Copyright (c) 2001-2006 by Pierrick Penven 
-	#  e-mail:Pierrick.Penven@ird.fr 
-	#
-	#  Updated    Aug-2006 by Pierrick Penven
-	#  Updated    2006/10/05 by Pierrick Penven (dl depend of model
-	#                                           resolution at low resolution)
-	#  Translated to Python by Rafael Soutelino, rsoutelino@gmail.com 
-	#  Last Modification: Aug, 2010
-	################################################################
-	"""
+    """
+    ################################################################
+    #
+    # add a topography (here etopo2) to a ROMS grid
+    #
+    # the topogaphy matrix is coarsened prior
+    # to the interpolation on the ROMS grid tp
+    # prevent the generation of noise due to 
+    # subsampling. this procedure ensure a better
+    # general volume conservation.
+    #
+    # Last update Pierrick Penven 8/2006.
+    #
+    #    
+    #  Further Information:  
+    #  http://www.brest.ird.fr/Roms_tools/
+    #  
+    #  This file is part of ROMSTOOLS
+    #
+    #  ROMSTOOLS is free software; you can redistribute it and/or modify
+    #  it under the terms of the GNU General Public License as published
+    #  by the Free Software Foundation; either version 2 of the License,
+    #  or (at your option) any later version.
+    #
+    #  ROMSTOOLS is distributed in the hope that it will be useful, but
+    #  WITHOUT ANY WARRANTY; without even the implied warranty of
+    #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    #  GNU General Public License for more details.
+    #
+    #  You should have received a copy of the GNU General Public License
+    #  along with this program; if not, write to the Free Software
+    #  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+    #  MA  02111-1307  USA
+    #
+    #  Copyright (c) 2001-2006 by Pierrick Penven 
+    #  e-mail:Pierrick.Penven@ird.fr 
+    #
+    #  Updated    Aug-2006 by Pierrick Penven
+    #  Updated    2006/10/05 by Pierrick Penven (dl depend of model
+    #                                           resolution at low resolution)
+    #  Translated to Python by Rafael Soutelino, rsoutelino@gmail.com 
+    #  Last Modification: Aug, 2010
+    ################################################################
+    """
+    print '        Reading topog data'
 
-	print '        Reading topog data'
+    dat = sp.loadmat(toponame)
+    x   = dat.pop('lon')
+    y   = dat.pop('lat')
+    z   = dat.pop('topo')
 
-	dat = sp.loadmat(toponame)
-	x   = dat.pop('lon')
-	y   = dat.pop('lat')
-	z   = dat.pop('topo')
+    dxt  = np.mean(np.abs(np.diff(np.ravel(x))))
+    dyt  = np.mean(np.abs(np.diff(np.ravel(y))))
+    dxt  = np.mean([dxt, dyt])
 
-	dxt  = np.mean(np.abs(np.diff(np.ravel(x))))
-	dyt  = np.mean(np.abs(np.diff(np.ravel(y))))
-	dxt  = np.mean([dxt, dyt])
+    if x.shape==y.shape==z.shape:
+        pass
+    else:
+        x, y = np.meshgrid(x, y)
 
-	x, y = np.meshgrid(x, y)
+    print '        Slicing topog data into ROMS domain'
 
-	print '        Slicing topog data into ROMS domain'
+    # slicing topog into roms domain
+    xm = np.ma.masked_where(x <= lon.min()-1, x)
+    ym = np.ma.masked_where(x <= lon.min()-1, y)
+    zm = np.ma.masked_where(x <= lon.min()-1, z)
+    x  = np.ma.compress_cols(xm)
+    y  = np.ma.compress_cols(ym)
+    z  = np.ma.compress_cols(zm)
 
-	# slicing topog into roms domain
-	xm = np.ma.masked_where(x <= lon.min()-1, x)
-	ym = np.ma.masked_where(x <= lon.min()-1, y)
-	zm = np.ma.masked_where(x <= lon.min()-1, z)
-	x  = np.ma.compress_cols(xm)
-	y  = np.ma.compress_cols(ym)
-	z  = np.ma.compress_cols(zm)
+    del xm, ym, zm
 
-	del xm, ym, zm
+    xm = np.ma.masked_where(x >= lon.max()+1, x)
+    ym = np.ma.masked_where(x >= lon.max()+1, y)
+    zm = np.ma.masked_where(x >= lon.max()+1, z)
+    x  = np.ma.compress_cols(xm)
+    y  = np.ma.compress_cols(ym)
+    z  = np.ma.compress_cols(zm)
 
-	xm = np.ma.masked_where(x >= lon.max()+1, x)
-	ym = np.ma.masked_where(x >= lon.max()+1, y)
-	zm = np.ma.masked_where(x >= lon.max()+1, z)
-	x  = np.ma.compress_cols(xm)
-	y  = np.ma.compress_cols(ym)
-	z  = np.ma.compress_cols(zm)
+    del xm, ym, zm
 
-	del xm, ym, zm
+    xm = np.ma.masked_where(y <= lat.min()-1, x)
+    ym = np.ma.masked_where(y <= lat.min()-1, y)
+    zm = np.ma.masked_where(y <= lat.min()-1, z)
+    x  = np.ma.compress_rows(xm)
+    y  = np.ma.compress_rows(ym)
+    z  = np.ma.compress_rows(zm)
 
-	xm = np.ma.masked_where(y <= lat.min()-1, x)
-	ym = np.ma.masked_where(y <= lat.min()-1, y)
-	zm = np.ma.masked_where(y <= lat.min()-1, z)
-	x  = np.ma.compress_rows(xm)
-	y  = np.ma.compress_rows(ym)
-	z  = np.ma.compress_rows(zm)
+    del xm, ym, zm
 
-	del xm, ym, zm
+    xm = np.ma.masked_where(y >= lat.max()+1, x)
+    ym = np.ma.masked_where(y >= lat.max()+1, y)
+    zm = np.ma.masked_where(y >= lat.max()+1, z)
+    x  = np.ma.compress_rows(xm)
+    y  = np.ma.compress_rows(ym)
+    z  = np.ma.compress_rows(zm)
 
-	xm = np.ma.masked_where(y >= lat.max()+1, x)
-	ym = np.ma.masked_where(y >= lat.max()+1, y)
-	zm = np.ma.masked_where(y >= lat.max()+1, z)
-	x  = np.ma.compress_rows(xm)
-	y  = np.ma.compress_rows(ym)
-	z  = np.ma.compress_rows(zm)
+    del xm, ym, zm
 
-	del xm, ym, zm
+    dxr = np.mean( 1/pm )
+    dyr = np.mean( 1/pn )
+    dxr = np.mean([dxr, dyr])
+    dxr = np.floor(dxr/1852); dxr = dxr/60
 
-	dxr = np.mean( 1/pm )
-	dyr = np.mean( 1/pn )
-	dxr = np.mean([dxr, dyr])
-	dxr = np.floor(dxr/1852); dxr = dxr/60
+    # degrading original topog resolution according to roms
+    # grid resolution to avoid unecessary heavy computations 
+     
+    d  = int(np.floor( dxr/dxt )) 
+    x  = x[0::d, 0::d]
+    y  = y[0::d, 0::d]
+    z  = z[0::d, 0::d]
+    h = -z
 
-	# degrading original topog resolution according to roms
-	# grid resolution to avoid unecessary heavy computations 
-	 
-	d  = int(np.floor( dxr/dxt )) 
-	x  = x[0::d, 0::d]
-	y  = y[0::d, 0::d]
-	z  = z[0::d, 0::d]
-	h = -z
+    print '        Interp topog data into ROMS grid'
 
-	print '        Interp topog data into ROMS grid'
+    h = griddata(x.ravel(),y.ravel(),h.ravel(),lon,lat,interp='nn')
 
-	h = griddata(x.ravel(),y.ravel(),h.ravel(),lon,lat,interp='nn')
-
-	return h
+    return h
 
 
 
