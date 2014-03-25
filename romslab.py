@@ -21,72 +21,73 @@ def __version__():
     return "romslab-0.1"
 
 class RunSetup(object):
-	"""Storage ROMS runs metadata"""
-	def __init__(self, filename):
-		self.filename = filename
-		
-		f = open(filename)
-		line = f.readline()
-		line = f.readline()
-		line = f.readline()
+    """Container class for ROMS runs metadata."""
+    def __init__(self, filename):
+        self.filename = filename
+        f = open(filename)
 
-		# read and save header
-		self.header = ""		
-		while line[0] == '#':
-			self.header += line[2:]
-			
-			key, value = line.split(':', 1)	
-			key = key.strip()[2:]
-			value = value.strip()
-			# put all the information inside the class dictionary 
-			self.__dict__[key.lower()] = value	
-		
-			line = f.readline() 
-		
-		# jumping lines
-		line = f.readline()	
-		while line[0] == '*':
-			print ' '
-			line = f.readline() 
-			
-		# read and save grid information
-		while line[0] == '#':
-			key, value = line.split(':', 2)	
-			key = key.strip()[2:]		
-			value = float(value)			
-			# put all the information inside the class dictionary 
-			self.__dict__[key.lower()] = value				
-			line = f.readline()
-			
-		# jumping lines	
-		line = f.readline()	
-		while line[0] == '*':
-			print ' '
-			line = f.readline()
+        # skipping lines
+        line = f.readline() 
+        while line[0] == '*':
+            print ' '
+            line = f.readline() 
 
-		# read and save fields information
-		while line[0] == '#':
-			key, value = line.split(':', 1)	
-			key = key.strip()[2:]
-			value = value.strip()		
-			# put all the information inside the class dictionary 
-			self.__dict__[key.lower()] = value	
-			line = f.readline()
-		
-		# jumping lines	
-		line = f.readline()	
-		while line[0] == '*':
-			print ' '
-			line = f.readline()
+        # read and save header.
+        self.header = ""
+        while line[0] == '#':
+            self.header += line[2:]
+            key, value = line.split(':', 1) 
+            key = key.strip()[2:]
+            value = value.strip()
+            # put all the information inside the class dictionary 
+            self.__dict__[key.lower()] = value  
 
-		# read and save fields information
-		while line[0] == '#':
-			key, value = line.split(':', 1)	
-			key = key.strip()[2:]
-			value = value.strip()		
-			# put all the information inside the class dictionary 
-			self.__dict__[key.lower()] = value	
-			line = f.readline()
+            line = f.readline() 
+        
+        # skipping lines.
+        line = f.readline() 
+        while line[0] == '*':
+            print ' '
+            line = f.readline() 
+            
+        # read and save grid information.
+        while line[0] == '#':
+            key, value = line.split(':', 2)
+            key = key.strip()[2:]
+            value = float(value)
+            # put all the information inside the class dictionary
+            self.__dict__[key.lower()] = value
+            line = f.readline()
+            
+        # skipping lines.
+        line = f.readline() 
+        while line[0] == '*':
+            print ' '
+            line = f.readline()
+
+        # read and save fields information.
+        while line[0] == '#':
+            key, value = line.split(':', 1) 
+            key = key.strip()[2:]
+            value = value.strip()       
+            # put all the information inside the class dictionary 
+            self.__dict__[key.lower()] = value  
+            line = f.readline()
+        
+        # skipping lines.
+        line = f.readline() 
+        while line[0] == '*':
+            print ' '
+            line = f.readline()
+
+        # read and save pathnames.
+        while len(line) != 0 and line[0] == '#':
+            key, value = line.split(':', 1) 
+            key = key.strip()[2:]
+            value = value.strip()       
+            # put all the information inside the class dictionary 
+            self.__dict__[key.lower()] = value  
+            line = f.readline()
 
 ### CLASS RomsGrid ##################################################
 
