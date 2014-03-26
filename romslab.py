@@ -206,15 +206,14 @@ def subset(x, y, z, xmin, xmax, ymin, ymax):
     return x2, y2, z2
 
 ### FUNCTION ZLEV ###################################################
-
 def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     """
     Set S-Curves in domain [-1 < sc < 0] 
     at vertical W- or RHO-points.
 
     On Input:  
-	
-    h         Bottom depth (m) of RHO-points (matrix).                     
+
+    h         Bottom depth (m) of RHO-points (matrix, positive).                     
     theta_s   S-coordinate surface control parameter (scalar):             
                 [0 < theta_s < 20].                                        
     theta_b   S-coordinate bottom control parameter (scalar):              
@@ -228,7 +227,7 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
                 kgrid = 1   ->  depths of W-points.                        
 
     On Output:                                                                
-	                                                                           
+                                                                               
     z       Depths (m)    of RHO- or W-points (matrix).                    
     dz      Mesh size (m) at W-   or RHO-points (matrix).                  
     sc      S-coordinate independent variable, [-1 < sc < 0] at            
@@ -239,8 +238,8 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     Copyright (c) 2003 UCLA - Patrick Marchesiello
     Translated to python by Rafael Soutelino - rsoutelino@gmail.com
     Last Modification: Aug, 2010
+    Last Modification: Mar, 2014
     """
-    
     Np     = N + 1
     ds     = 1/N
     hmin   = h.min()
@@ -248,25 +247,24 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     Mr, Lr = h.shape;
 
     if   kgrid==0:
-	zeta = np.zeros([Mr, Lr])
-	grid = 'r'
+        zeta = np.zeros([Mr, Lr])
+        grid = 'r'
     elif zeta==0:
-	zeta = np.zeros([Mr, Lr])
-	
-    if grid == 'r':
-	Nlev = N
-	lev  = np.arange(1, N+1, 1)
-	sc   = -1 + (lev-0.5) * ds
-    else:
-	Nlev = Np
-	lev  = np.arange(0, N+1, 1)
-	sc   = -1 + lev * ds
+        zeta = np.zeros([Mr, Lr])
 
-	
+    if grid == 'r':
+        Nlev = N
+        lev  = np.arange(1, N+1, 1)
+        sc   = -1 + (lev-0.5) * ds
+    else:
+        Nlev = Np
+        lev  = np.arange(0, N+1, 1)
+        sc   = -1 + lev * ds
+
     Ptheta = np.sinh(theta_s * sc) / np.sinh(theta_s)
     Rtheta = np.tanh(theta_s * (sc + 0.5) ) / (2*np.tanh(0.5 * theta_s)) -0.5
     Cs     = (1-theta_b)*Ptheta + theta_b*Rtheta
-	
+
     cff0 = 1 + sc
     cff1 = (sc-Cs) * hc
     cff2 = Cs
@@ -277,14 +275,10 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     dz  = np.zeros([N, Mr, Lr])
     for k in np.arange(1, Nlev, 1):
         dz[k-1,:,:] = z[k,:,:] - z[k-1,:,:]
-	
+
     return z, dz, sc, Cs
-	
-
-
 
 ### FUNCTION ZTOSIGMA ###################################################
-
 def ztosigma(var,z,depth):
     """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -294,7 +288,7 @@ def ztosigma(var,z,depth):
     %                                                                 %
     % function  vnew = ztosigma(var,z,depth)                          %
     %                                                                 %
-    % This function transform a variable from z to sigma coordinates  %
+    % This function transforms a variable from z to sigma coordinates %
     %                                                                 %
     % On Input:                                                       %
     %                                                                 %
@@ -337,8 +331,6 @@ def ztosigma(var,z,depth):
 	vnew[ks,:,:] = (((v1-v2) * sigmalev + v2*z1 - v1*z2) / (z1-z2))
 
     return vnew
-
-
 
 ### FUNCTION RHO2UVP ###################################################
 
