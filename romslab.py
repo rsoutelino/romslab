@@ -29,7 +29,6 @@ class RunSetup(object):
         # skipping lines
         line = f.readline() 
         while line[0] == '*':
-            print ' '
             line = f.readline() 
 
         # read and save header.
@@ -47,7 +46,6 @@ class RunSetup(object):
         # skipping lines.
         line = f.readline() 
         while line[0] == '*':
-            print ' '
             line = f.readline() 
             
         # read and save grid information.
@@ -62,7 +60,6 @@ class RunSetup(object):
         # skipping lines.
         line = f.readline() 
         while line[0] == '*':
-            print ' '
             line = f.readline()
 
         # read and save fields information.
@@ -77,7 +74,6 @@ class RunSetup(object):
         # skipping lines.
         line = f.readline() 
         while line[0] == '*':
-            print ' '
             line = f.readline()
 
         # read and save pathnames.
@@ -282,7 +278,7 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     for k in np.arange(1, Nlev, 1):
         dz[k-1,:,:] = z[k,:,:] - z[k-1,:,:]
 	
-    return z, dz			
+    return z, dz, sc, Cs
 	
 
 
