@@ -18,72 +18,75 @@ import netCDF4 as nc
 ### CLASS RunSetup #################################################
 
 def __version__():
-    return "romslab-0.1"
+    return "romslab-0.2"
 
 class RunSetup(object):
-    """Container class for ROMS runs metadata."""
-    def __init__(self, filename):
-        self.filename = filename
-        f = open(filename)
+	"""Storage ROMS runs metadata"""
+	def __init__(self, filename):
+		self.filename = filename
+		
+		f = open(filename)
+		line = f.readline()
+		line = f.readline()
+		line = f.readline()
 
-        # skipping lines
-        line = f.readline() 
-        while line[0] == '*':
-            line = f.readline() 
+		# read and save header
+		self.header = ""		
+		while line[0] == '#':
+			self.header += line[2:]
+			
+			key, value = line.split(':', 1)	
+			key = key.strip()[2:]
+			value = value.strip()
+			# put all the information inside the class dictionary 
+			self.__dict__[key.lower()] = value	
+		
+			line = f.readline() 
+		
+		# jumping lines
+		line = f.readline()	
+		while line[0] == '*':
+			print ' '
+			line = f.readline() 
+			
+		# read and save grid information
+		while line[0] == '#':
+			key, value = line.split(':', 2)	
+			key = key.strip()[2:]		
+			value = float(value)			
+			# put all the information inside the class dictionary 
+			self.__dict__[key.lower()] = value				
+			line = f.readline()
+			
+		# jumping lines	
+		line = f.readline()	
+		while line[0] == '*':
+			print ' '
+			line = f.readline()
 
-        # read and save header.
-        self.header = ""
-        while line[0] == '#':
-            self.header += line[2:]
-            key, value = line.split(':', 1) 
-            key = key.strip()[2:]
-            value = value.strip()
-            # put all the information inside the class dictionary 
-            self.__dict__[key.lower()] = value  
+		# read and save fields information
+		while line[0] == '#':
+			key, value = line.split(':', 1)	
+			key = key.strip()[2:]
+			value = value.strip()		
+			# put all the information inside the class dictionary 
+			self.__dict__[key.lower()] = value	
+			line = f.readline()
+		
+		# jumping lines	
+		line = f.readline()	
+		while line[0] == '*':
+			print ' '
+			line = f.readline()
 
-            line = f.readline() 
-        
-        # skipping lines.
-        line = f.readline() 
-        while line[0] == '*':
-            line = f.readline() 
-            
-        # read and save grid information.
-        while line[0] == '#':
-            key, value = line.split(':', 2)
-            key = key.strip()[2:]
-            value = float(value)
-            # put all the information inside the class dictionary
-            self.__dict__[key.lower()] = value
-            line = f.readline()
-            
-        # skipping lines.
-        line = f.readline() 
-        while line[0] == '*':
-            line = f.readline()
-
-        # read and save fields information.
-        while line[0] == '#':
-            key, value = line.split(':', 1) 
-            key = key.strip()[2:]
-            value = value.strip()       
-            # put all the information inside the class dictionary 
-            self.__dict__[key.lower()] = value  
-            line = f.readline()
-        
-        # skipping lines.
-        line = f.readline() 
-        while line[0] == '*':
-            line = f.readline()
-
-        # read and save pathnames.
-        while len(line) != 0 and line[0] == '#':
-            key, value = line.split(':', 1) 
-            key = key.strip()[2:]
-            value = value.strip()       
-            # put all the information inside the class dictionary 
-            self.__dict__[key.lower()] = value  
-            line = f.readline()
+		# read and save fields information
+		while line[0] == '#':
+			key, value = line.split(':', 1)	
+			key = key.strip()[2:]
+			value = value.strip()		
+			# put all the information inside the class dictionary 
+			self.__dict__[key.lower()] = value	
+			line = f.readline()
 
 ### CLASS RomsGrid ##################################################
 
@@ -96,14 +99,11 @@ class RomsGrid(object):
         self.ncfile = nc.Dataset(filename, mode='r+')
         self.lonr  = self.ncfile.variables['lon_rho'][:]
         self.latr  = self.ncfile.variables['lat_rho'][:]
-        self.lonp  = self.ncfile.variables['lon_psi'][:]
-        self.latp  = self.ncfile.variables['lat_psi'][:]
         self.lonu  = self.ncfile.variables['lon_u'][:]
         self.latu  = self.ncfile.variables['lat_u'][:]
         self.lonv  = self.ncfile.variables['lon_v'][:]
         self.latv  = self.ncfile.variables['lat_v'][:]
         self.maskr = self.ncfile.variables['mask_rho'][:]
-        self.maskp = self.ncfile.variables['mask_psi'][:]
         self.masku = self.ncfile.variables['mask_u'][:]
         self.maskv = self.ncfile.variables['mask_v'][:]
     
@@ -118,7 +118,7 @@ class RomsGrid(object):
         urclat = self.latr.max()
         return llclon, urclon, llclat, urclat
         
-### CLASS RomsHis ##################################################
+### CLASS RomsHis ##############################################
 
 class RomsHis(object):
     """ 
@@ -127,16 +127,20 @@ class RomsHis(object):
     """
     def __init__(self,filename):
         self.filename = filename    
-        self.ncfile = nc.Dataset(filename, mode='r+')
-        self.lonr  = self.ncfile.variables['lon_rho'][:]
-        self.latr  = self.ncfile.variables['lat_rho'][:]
-        self.lonu  = self.ncfile.variables['lon_u'][:]
-        self.latu  = self.ncfile.variables['lat_u'][:]
-        self.lonv  = self.ncfile.variables['lon_v'][:]
-        self.latv  = self.ncfile.variables['lat_v'][:]
-        self.maskr = self.ncfile.variables['mask_rho'][:]
-        self.masku = self.ncfile.variables['mask_u'][:]
-        self.maskv = self.ncfile.variables['mask_v'][:]
+        self.ncfile = nc.Dataset(filename, mode='r')
+        self.varlist = list(self.ncfile.variables)
+        
+        for var in self.varlist:
+            exec("self.%s = self.ncfile.variables['%s']" %(var, var) )
+#        self.lonr  = self.ncfile.variables['lon_rho'][:]
+#        self.latr  = self.ncfile.variables['lat_rho'][:]
+#        self.lonu  = self.ncfile.variables['lon_u'][:]
+#        self.latu  = self.ncfile.variables['lat_u'][:]
+#        self.lonv  = self.ncfile.variables['lon_v'][:]
+#        self.latv  = self.ncfile.variables['lat_v'][:]
+#        self.maskr = self.ncfile.variables['mask_rho'][:]
+#        self.masku = self.ncfile.variables['mask_u'][:]
+#        self.maskv = self.ncfile.variables['mask_v'][:]
     
     def corners(self):
         """
@@ -148,6 +152,304 @@ class RomsHis(object):
         llclat = self.latr.min()
         urclat = self.latr.max()
         return llclon, urclon, llclat, urclat
+        
+
+### CLASS PlotROMS #####################################################
+
+class PlotROMS(object):
+    """ 
+    Visualization of ROMS outputs
+    DEPENDS ON EXTERNAL FUNCTIONS AND CLASSES FROM ROMSLAB MODULE:
+        get_depths
+    !!! Under construction !!!
+    """
+    # getting ROMS varibles as class attributes
+    def __init__(self, outname):
+        self.outname = outname  
+        self.outfile = nc.Dataset(outname, mode='r')
+        
+        varlist  = ['lon_rho', 'lat_rho', 'lon_u', 'lat_u', 'lon_v', 'lat_v',
+                    'h', 'angle', 'ocean_time', 'temp', 'salt', 'ubar', 'vbar',
+                    'u', 'v', 'zeta']
+        namelist = ['lonr', 'latr', 'lonu', 'latu', 'lonv', 'latv', 'h',
+                    'angle', 'time', 'temp', 'salt', 'ubar', 'vbar',
+                    'u', 'v', 'zeta']
+        
+        for name, var in zip(namelist, varlist):
+            try:
+                exec "self.%s = self.outfile.variables['%s']" %(name, var)
+            except KeyError:
+                print "WARNING: ROMS output NetCDF file must contain the \
+variable '%s' !! \n None was assined to this attribute. Some methods may \
+not work properly.\n" %var
+                exec "self.%s = None" %name
+        
+        self.lonr = self.lonr[:]; self.lonu = self.lonu[:]; self.lonv = self.lonv[:];
+        self.latr = self.latr[:]; self.latu = self.latu[:]; self.latv = self.latv[:];
+        self.h    = self.h[:]
+        self.lm, self.km, self.im, self.jm = self.temp[:].shape
+        
+        dates = []
+        # dates are obtained by ROMS defaut origin (0001/01/01)
+        for k in range(0,len(self.time[:])):
+            sec = dt.timedelta(seconds=int(self.time[k] ) )
+            dates.append( dt.datetime(1, 1, 1) + sec )
+        
+        self.dates = dates
+
+  
+    def corners(self):
+        """
+        Returns lon, lat cornes for a map projection:
+        Usage: llclon, urclon, llclat, urclat = corners(self)
+        """
+        llclon = self.lonr.min()
+        urclon = self.lonr.max()
+        llclat = self.latr.min()
+        urclat = self.latr.max()
+        return llclon, urclon, llclat, urclat
+        
+
+    def inimap(self, lims=None):
+        """
+        Initializes a Basemap object instance to use as map 
+        projection for future use inside this class
+        INPUT:
+            lims: Map lon, lat limits [tuple: (lonmin, lonmax, latmin, latmax)]
+                  If not provided, grid corners will be used as limits
+        OUTPUT: Basemap object instance
+        """
+        if not lims:
+            lims = self.corners()
+        m = Basemap(projection='merc', llcrnrlon=lims[0], urcrnrlon=lims[1],
+                    llcrnrlat=lims[2], urcrnrlat=lims[3], lat_ts=0, resolution='i')
+        
+        self.mlon, self.mlat = m(self.lonr, self.latr)
+        
+        return m
+        
+    
+    def hslice(self, m, l=-1, nk=-1, velkey=1, trkey=1, vsc=10, vskip=1,
+                        tr='temp', trmin=None, trmax=None):
+        """
+        Vel over temp or vel over salt at any Z level
+        !!! Under construction !!!
+        USAGE: hslice= (m, args)
+        INPUT:
+            m:      Basemap instance [use the method inimap to create that]
+            l:      model time step [integer]
+            nk:     depth [integer, meters] (Default = -1: the shalowest level  )
+            velkey: flag to plot [1] or not [0] velocity vectors
+            trkey:  flag to plot [1] or not [0] tracer field
+            vsc:    quiver scale [integer]
+            vskip:  vector skip for nice quiver presentation [integer]
+            tr:     kind of tracer [string: 'temp' or 'salt']
+            trmin:  minimum value for tracer colormap 
+            trmax:  maximum value for tracer colormap
+        OUTPUT: 
+            Matplotlib figure on screen
+            Figure properties and plotted arrays will become available 
+            as PlotROMS class attributes
+        """
+        
+        # preparing velocity vetors
+        if velkey:
+            zu = get_depths(self.outfile, l, 'u')
+            zv = get_depths(self.outfile, l, 'v')
+            u = 0*self.lonu; v = 0*self.lonv # initializing arrays
+            if nk == -1: 
+                print "\n\nSurface level was chosen! %s\n\n" % ("."*50)
+                u = self.u[l, nk,...]
+                v = self.v[l, nk,...]           
+            else:
+                print "\n\nInterpolating VEL from S to Z coordinates %s\n\n" % ("."*50)
+                for a in range (0, self.im):
+                    for b in range(0, self.jm-1):
+                        u[a,b] = np.interp(-nk, zu[:, a, b], self.u[l, :, a, b] )
+                for a in range (0, self.im-1):
+                    for b in range(0, self.jm):
+                        v[a,b] = np.interp(-nk, zv[:, a, b], self.v[l, :, a, b] )
+
+            print "\n\nInterpolating (u,v) to rho-points %s\n\n" % ("."*50)
+            u = griddata(self.lonu.ravel(), self.latu.ravel(), u.ravel(),
+                         self.lonr, self.latr)
+            v = griddata(self.lonv.ravel(), self.latv.ravel(), v.ravel(),
+                         self.lonr, self.latr)
+            # rotating vel according to grid angle
+            u = u*np.cos(self.angle[:]) - v*np.sin(self.angle[:])
+            v = u*np.sin(self.angle[:]) + v*np.cos(self.angle[:])
+            
+        # preparing tracer field
+        if trkey:
+            exec "tmp = self.%s" % (tr)
+            zt   = get_depths(self.outfile, l, 'temp')
+            tracer = self.lonr*0 # initializing array
+            if nk == -1:
+                print "\n\nSurface level was chosen! %s\n\n" % ("."*50)
+                tracer = tmp[l, nk,...]
+            else:
+                print "\n\nInterpolating TRACER from S to Z coordinates %s\n\n" % ("."*50)
+                for a in range (0, self.im):
+                    for b in range(0, self.jm):
+                        tracer[a,b] = np.interp(-nk, zt[:, a, b], tmp[l, :, a, b] )
+        
+        # masking out absurd values and in land values
+        if velkey:
+            u = np.ma.masked_where(u > 10, u)
+            v = np.ma.masked_where(v > 10, v)
+            u = np.ma.masked_where(self.h < nk, u)
+            v = np.ma.masked_where(self.h < nk, v)
+        if trkey:
+            tracer = np.ma.masked_where(tracer > 40, tracer)
+            tracer = np.ma.masked_where(self.h < nk, tracer)
+        
+        # initializing figure instance
+        self.figure = plt.figure(facecolor='w')
+        titlestr = ''
+        
+        if trkey:
+            titlestr += "%s " %(tr)
+            self.pcolor = m.pcolormesh(self.mlon, self.mlat, tracer, vmin=trmin, vmax=trmax)
+            self.cbar = plt.colorbar()
+            self.tracerAtZ = tracer
+        if velkey:
+            self.uAtZ = u
+            self.vAtZ = v
+            titlestr += "vel "
+            self.quiver = m.quiver(self.mlon[::vskip,::vskip], self.mlat[::vskip,::vskip],
+                         u[::vskip,::vskip], v[::vskip,::vskip], scale=vsc)
+            vmax = np.sqrt(u**2 + v**2).max()
+            self.qkey = plt.quiverkey(self.quiver, 0.6, -0.05, vmax, r"$ %.0f cm s^{-1}$" %(vmax*100),
+                            labelpos='W', fontproperties={'weight': 'bold'})
+                            
+        self.contour = m.contour(self.mlon, self.mlat, self.h, (1000,200), colors='k')
+        self.continents = m.fillcontinents()
+        self.coast = m.drawcoastlines()
+        titlestr += ": %04d/%02d/%02d %02d:%02dh" %(self.dates[l].year,
+                     self.dates[l].month, self.dates[l].day, self.dates[l].hour,
+                     self.dates[l].minute )
+        if nk == -1:
+            titlestr += " : Surface"
+        else:
+            titlestr += " : %s m" %str(nk)
+        self.figTitle = plt.title(titlestr, fontsize=10, fontweight='bold')
+        plt.show()
+                    
+        return 
+        
+    def vslice(self, p1, p2, sc, zlim, field, cmap=plt.cm.jet, l=-1):
+        """
+        Tracer vertical slice at any location
+        !!! Under construction !!!
+        USAGE: vslice = (p1, p2, sc, zlim, field, *args)
+        INPUT:
+            p1:    starting (lon,lat) point of the transect [tuple]
+            p2:    ending (lon,lat) point of the transect [tuple]
+            sc:   scale for contour plot (min, max, step) [tuple, list or numpy array]
+            zlim:  vertical axis limits [tuple: (zmin, zmax)]
+            field: field to be plotted [string: 'temp', 'salt', 'u', 'v']
+            cmap:  colormap to be used
+            l:     model time step [integer]
+        OUTPUT:
+            Matplotlib figure on screen
+            Figure properties and plotted arrays will become available 
+            as PlotROMS class attributes
+        """
+        x = self.lonr
+        y = self.latr
+        t = self.temp[l,...]
+        s = self.salt[l,...]
+        u = self.u[l,...]
+        v = self.v[l,...]
+        
+        ths = self.outfile.variables['theta_s'][:]
+        thb = self.outfile.variables['theta_b'][:]
+        hc = self.outfile.variables['hc'][:]
+        z = zlevs(self.h[:], self.zeta[l,...], ths, thb, hc, self.km, 'r')
+        
+        res = ( np.gradient(self.lonr)[1].mean() + np.gradient(self.latr)[0].mean() ) / 2
+        siz = np.sqrt( (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2 ) / res
+        xs = np.linspace(p1[0], p2[0], siz)
+        ys = np.linspace(p1[1], p2[1], siz)
+        
+
+        zs, ts, ss, us, vs = [], [], [], [], []
+        for k in range(0, xs.size):
+            lin, col = near2d( x, y, xs[k], ys[k] )
+            zs.append( z[:, lin, col] )
+            ts.append( t[:, lin, col] )
+            ss.append( t[:, lin, col] )
+            us.append( u[:, lin, col] )
+            vs.append( v[:, lin, col] )
+            
+        zs = np.array(zs)
+        ts = np.array(ts)
+        ss = np.array(ss)
+        us = np.array(us)
+        vs = np.array(vs)
+        xs.shape = (xs.size, 1)
+        ys.shape = (ys.size, 1) 
+        xs = xs.repeat(self.km, axis=1)
+        ys = ys.repeat(self.km, axis=1)
+        
+        # computing cross and along transect velocity components
+        
+        
+        exec "ps = p%s" %field[0]
+        
+        self.xVslice = xs
+        self.yVslice = ys
+        self.zVslice = zs
+        self.tVslice = ts
+        self.sVslice = ss
+        self.uVslice = us
+        self.vVslice = vs
+    
+        titlestr = "%s " %(tr)
+        titlestr += ": %04d/%02d/%02d %02d:%02dh" %(self.dates[l].year,
+                        self.dates[l].month, self.dates[l].day, self.dates[l].hour,
+                        self.dates[l].minute )
+        
+        self.figure = plt.figure(facecolor='w')
+        ax1 = self.figure.add_axes([0.1, 0.1, 0.3, 0.3])
+        self.contourf = plt.contourf(xs, zs, ps, sc, axes=ax1, cmap=cmap)
+        if xs[0,0] > xs[-1,-1]: ax1.set_xlim(ax1.get_xlim()[::-1])
+        if p1[0] == p2[0]:
+            ax1.xaxis.set_ticklabels('')
+            tit = "Longitude = %s" %str(p1[0])
+        else: tit = "Longitude"
+        ax1.set_xlabel(tit)
+        ax1.set_ylim(zlim)
+        ax1.set_ylabel('z [m]')
+
+        ax2 = self.figure.add_axes([0.5, 0.5, 0.3, 0.3])
+        con = plt.contourf(ys, zs, ps, sc, axes=ax2, cmap=cmap)
+        if ys[0,0] > ys[-1,-1]: ax2.set_xlim(ax2.get_xlim()[::-1])
+        if p1[1] == p2[1]:
+            ax2.xaxis.set_ticklabels('')
+            tit = "Latitude = %s" %str(p1[1])
+        else: tit = "Latitude"
+        ax2.set_yticklabels('')
+        ax2.set_ylim(zlim)
+        ax2.xaxis.set_ticks_position('top')
+
+        ax1.set_position( [0.125, 0.1, 0.7, 0.75] )
+        ax2.set_position( [0.125, 0.1, 0.7, 0.75] )
+
+        self.figTitle = ax1.set_title(titlestr, fontsize=10, fontweight='bold')
+        self.figTitle.set_position( (0.5, 1.12) )
+                
+        ax3 = self.figure.add_axes([0.85, 0.1, 0.015, 0.75])
+        cbar = plt.colorbar(con, cax=ax3, orientation='vertical')
+        cbar.set_label('$^\circ$ C')   
+            
+        ax4 = self.figure.add_axes([0.4, 0.83, 0.2, 0.05]) 
+        ax4.set_title(tit, fontsize=10)
+        ax4.set_axis_off()
+
+        plt.show()     
+        
+        return
 
 ### CLASS LoadEtopo5 ###################################################
 
@@ -206,14 +508,15 @@ def subset(x, y, z, xmin, xmax, ymin, ymax):
     return x2, y2, z2
 
 ### FUNCTION ZLEV ###################################################
+
 def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     """
     Set S-Curves in domain [-1 < sc < 0] 
     at vertical W- or RHO-points.
 
     On Input:  
-
-    h         Bottom depth (m) of RHO-points (matrix, positive).                     
+	
+    h         Bottom depth (m) of RHO-points (matrix).                     
     theta_s   S-coordinate surface control parameter (scalar):             
                 [0 < theta_s < 20].                                        
     theta_b   S-coordinate bottom control parameter (scalar):              
@@ -227,7 +530,7 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
                 kgrid = 1   ->  depths of W-points.                        
 
     On Output:                                                                
-                                                                               
+	                                                                           
     z       Depths (m)    of RHO- or W-points (matrix).                    
     dz      Mesh size (m) at W-   or RHO-points (matrix).                  
     sc      S-coordinate independent variable, [-1 < sc < 0] at            
@@ -238,8 +541,8 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     Copyright (c) 2003 UCLA - Patrick Marchesiello
     Translated to python by Rafael Soutelino - rsoutelino@gmail.com
     Last Modification: Aug, 2010
-    Last Modification: Mar, 2014
     """
+    
     Np     = N + 1
     ds     = 1/N
     hmin   = h.min()
@@ -247,24 +550,25 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     Mr, Lr = h.shape;
 
     if   kgrid==0:
-        zeta = np.zeros([Mr, Lr])
-        grid = 'r'
+	zeta = np.zeros([Mr, Lr])
+	grid = 'r'
     elif zeta==0:
-        zeta = np.zeros([Mr, Lr])
-
+	zeta = np.zeros([Mr, Lr])
+	
     if grid == 'r':
-        Nlev = N
-        lev  = np.arange(1, N+1, 1)
-        sc   = -1 + (lev-0.5) * ds
+	Nlev = N
+	lev  = np.arange(1, N+1, 1)
+	sc   = -1 + (lev-0.5) * ds
     else:
-        Nlev = Np
-        lev  = np.arange(0, N+1, 1)
-        sc   = -1 + lev * ds
+	Nlev = Np
+	lev  = np.arange(0, N+1, 1)
+	sc   = -1 + lev * ds
 
+	
     Ptheta = np.sinh(theta_s * sc) / np.sinh(theta_s)
     Rtheta = np.tanh(theta_s * (sc + 0.5) ) / (2*np.tanh(0.5 * theta_s)) -0.5
     Cs     = (1-theta_b)*Ptheta + theta_b*Rtheta
-
+	
     cff0 = 1 + sc
     cff1 = (sc-Cs) * hc
     cff2 = Cs
@@ -275,10 +579,14 @@ def zlev(h,theta_s,theta_b,Tcline,N,kgrid=0,zeta=0):
     dz  = np.zeros([N, Mr, Lr])
     for k in np.arange(1, Nlev, 1):
         dz[k-1,:,:] = z[k,:,:] - z[k-1,:,:]
+	
+    return z, dz			
+	
 
-    return z, dz, sc, Cs
+
 
 ### FUNCTION ZTOSIGMA ###################################################
+
 def ztosigma(var,z,depth):
     """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -288,7 +596,7 @@ def ztosigma(var,z,depth):
     %                                                                 %
     % function  vnew = ztosigma(var,z,depth)                          %
     %                                                                 %
-    % This function transforms a variable from z to sigma coordinates %
+    % This function transform a variable from z to sigma coordinates  %
     %                                                                 %
     % On Input:                                                       %
     %                                                                 %
@@ -331,6 +639,10 @@ def ztosigma(var,z,depth):
 	vnew[ks,:,:] = (((v1-v2) * sigmalev + v2*z1 - v1*z2) / (z1-z2))
 
     return vnew
+
+### FUNCTION SIGMATOZ ###################################################
+
+# def sigmatoz()
 
 ### FUNCTION RHO2UVP ###################################################
 
@@ -645,124 +957,122 @@ def get_angle(latu,lonu,argu1='wgs84'):
 ### FUNCTION ADD_TOPO ###################################################
 
 def add_topo(lon, lat, pm, pn, toponame):
-    """
-    ################################################################
-    #
-    # add a topography (here etopo2) to a ROMS grid
-    #
-    # the topogaphy matrix is coarsened prior
-    # to the interpolation on the ROMS grid tp
-    # prevent the generation of noise due to 
-    # subsampling. this procedure ensure a better
-    # general volume conservation.
-    #
-    # Last update Pierrick Penven 8/2006.
-    #
-    #    
-    #  Further Information:  
-    #  http://www.brest.ird.fr/Roms_tools/
-    #  
-    #  This file is part of ROMSTOOLS
-    #
-    #  ROMSTOOLS is free software; you can redistribute it and/or modify
-    #  it under the terms of the GNU General Public License as published
-    #  by the Free Software Foundation; either version 2 of the License,
-    #  or (at your option) any later version.
-    #
-    #  ROMSTOOLS is distributed in the hope that it will be useful, but
-    #  WITHOUT ANY WARRANTY; without even the implied warranty of
-    #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    #  GNU General Public License for more details.
-    #
-    #  You should have received a copy of the GNU General Public License
-    #  along with this program; if not, write to the Free Software
-    #  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-    #  MA  02111-1307  USA
-    #
-    #  Copyright (c) 2001-2006 by Pierrick Penven 
-    #  e-mail:Pierrick.Penven@ird.fr 
-    #
-    #  Updated    Aug-2006 by Pierrick Penven
-    #  Updated    2006/10/05 by Pierrick Penven (dl depend of model
-    #                                           resolution at low resolution)
-    #  Translated to Python by Rafael Soutelino, rsoutelino@gmail.com 
-    #  Last Modification: Aug, 2010
-    ################################################################
-    """
-    print '        Reading topog data'
+	"""
+	################################################################
+	#
+	# add a topography (here etopo2) to a ROMS grid
+	#
+	# the topogaphy matrix is coarsened prior
+	# to the interpolation on the ROMS grid tp
+	# prevent the generation of noise due to 
+	# subsampling. this procedure ensure a better
+	# general volume conservation.
+	#
+	# Last update Pierrick Penven 8/2006.
+	#
+	#    
+	#  Further Information:  
+	#  http://www.brest.ird.fr/Roms_tools/
+	#  
+	#  This file is part of ROMSTOOLS
+	#
+	#  ROMSTOOLS is free software; you can redistribute it and/or modify
+	#  it under the terms of the GNU General Public License as published
+	#  by the Free Software Foundation; either version 2 of the License,
+	#  or (at your option) any later version.
+	#
+	#  ROMSTOOLS is distributed in the hope that it will be useful, but
+	#  WITHOUT ANY WARRANTY; without even the implied warranty of
+	#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	#  GNU General Public License for more details.
+	#
+	#  You should have received a copy of the GNU General Public License
+	#  along with this program; if not, write to the Free Software
+	#  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+	#  MA  02111-1307  USA
+	#
+	#  Copyright (c) 2001-2006 by Pierrick Penven 
+	#  e-mail:Pierrick.Penven@ird.fr 
+	#
+	#  Updated    Aug-2006 by Pierrick Penven
+	#  Updated    2006/10/05 by Pierrick Penven (dl depend of model
+	#                                           resolution at low resolution)
+	#  Translated to Python by Rafael Soutelino, rsoutelino@gmail.com 
+	#  Last Modification: Aug, 2010
+	################################################################
+	"""
 
-    dat = sp.loadmat(toponame)
-    x   = dat.pop('lon')
-    y   = dat.pop('lat')
-    z   = dat.pop('topo')
+	print '        Reading topog data'
 
-    dxt  = np.mean(np.abs(np.diff(np.ravel(x))))
-    dyt  = np.mean(np.abs(np.diff(np.ravel(y))))
-    dxt  = np.mean([dxt, dyt])
+	dat = nc.Dataset(toponame)
+	x   = dat.variables['lon'][0,:]
+	y   = dat.variables['lat'][:,0]
+	z   = dat.variables['topo'][:]
 
-    if x.shape==y.shape==z.shape:
-        pass
-    else:
-        x, y = np.meshgrid(x, y)
+	dxt  = np.mean(np.abs(np.diff(np.ravel(x))))
+	dyt  = np.mean(np.abs(np.diff(np.ravel(y))))
+	dxt  = np.mean([dxt, dyt])
 
-    print '        Slicing topog data into ROMS domain'
+	x, y = np.meshgrid(x, y)
 
-    # slicing topog into roms domain
-    xm = np.ma.masked_where(x <= lon.min()-1, x)
-    ym = np.ma.masked_where(x <= lon.min()-1, y)
-    zm = np.ma.masked_where(x <= lon.min()-1, z)
-    x  = np.ma.compress_cols(xm)
-    y  = np.ma.compress_cols(ym)
-    z  = np.ma.compress_cols(zm)
+	print '        Slicing topog data into ROMS domain'
 
-    del xm, ym, zm
+	# slicing topog into roms domain
+	xm = np.ma.masked_where(x <= lon.min()-1, x)
+	ym = np.ma.masked_where(x <= lon.min()-1, y)
+	zm = np.ma.masked_where(x <= lon.min()-1, z)
+	x  = np.ma.compress_cols(xm)
+	y  = np.ma.compress_cols(ym)
+	z  = np.ma.compress_cols(zm)
 
-    xm = np.ma.masked_where(x >= lon.max()+1, x)
-    ym = np.ma.masked_where(x >= lon.max()+1, y)
-    zm = np.ma.masked_where(x >= lon.max()+1, z)
-    x  = np.ma.compress_cols(xm)
-    y  = np.ma.compress_cols(ym)
-    z  = np.ma.compress_cols(zm)
+	del xm, ym, zm
 
-    del xm, ym, zm
+	xm = np.ma.masked_where(x >= lon.max()+1, x)
+	ym = np.ma.masked_where(x >= lon.max()+1, y)
+	zm = np.ma.masked_where(x >= lon.max()+1, z)
+	x  = np.ma.compress_cols(xm)
+	y  = np.ma.compress_cols(ym)
+	z  = np.ma.compress_cols(zm)
 
-    xm = np.ma.masked_where(y <= lat.min()-1, x)
-    ym = np.ma.masked_where(y <= lat.min()-1, y)
-    zm = np.ma.masked_where(y <= lat.min()-1, z)
-    x  = np.ma.compress_rows(xm)
-    y  = np.ma.compress_rows(ym)
-    z  = np.ma.compress_rows(zm)
+	del xm, ym, zm
 
-    del xm, ym, zm
+	xm = np.ma.masked_where(y <= lat.min()-1, x)
+	ym = np.ma.masked_where(y <= lat.min()-1, y)
+	zm = np.ma.masked_where(y <= lat.min()-1, z)
+	x  = np.ma.compress_rows(xm)
+	y  = np.ma.compress_rows(ym)
+	z  = np.ma.compress_rows(zm)
 
-    xm = np.ma.masked_where(y >= lat.max()+1, x)
-    ym = np.ma.masked_where(y >= lat.max()+1, y)
-    zm = np.ma.masked_where(y >= lat.max()+1, z)
-    x  = np.ma.compress_rows(xm)
-    y  = np.ma.compress_rows(ym)
-    z  = np.ma.compress_rows(zm)
+	del xm, ym, zm
 
-    del xm, ym, zm
+	xm = np.ma.masked_where(y >= lat.max()+1, x)
+	ym = np.ma.masked_where(y >= lat.max()+1, y)
+	zm = np.ma.masked_where(y >= lat.max()+1, z)
+	x  = np.ma.compress_rows(xm)
+	y  = np.ma.compress_rows(ym)
+	z  = np.ma.compress_rows(zm)
 
-    dxr = np.mean( 1/pm )
-    dyr = np.mean( 1/pn )
-    dxr = np.mean([dxr, dyr])
-    dxr = np.floor(dxr/1852); dxr = dxr/60
+	del xm, ym, zm
 
-    # degrading original topog resolution according to roms
-    # grid resolution to avoid unecessary heavy computations 
-     
-    d  = int(np.floor( dxr/dxt )) 
-    x  = x[0::d, 0::d]
-    y  = y[0::d, 0::d]
-    z  = z[0::d, 0::d]
-    h = -z
+	dxr = np.mean( 1/pm )
+	dyr = np.mean( 1/pn )
+	dxr = np.mean([dxr, dyr])
+	dxr = np.floor(dxr/1852); dxr = dxr/60
 
-    print '        Interp topog data into ROMS grid'
+	# degrading original topog resolution according to roms
+	# grid resolution to avoid unecessary heavy computations 
+	 
+	d  = int(np.floor( dxr/dxt )) 
+	x  = x[0::d, 0::d]
+	y  = y[0::d, 0::d]
+	z  = z[0::d, 0::d]
+	h = -z
 
-    h = griddata(x.ravel(),y.ravel(),h.ravel(),lon,lat,interp='nn')
+	print '        Interp topog data into ROMS grid'
 
-    return h
+	h = griddata(x.ravel(),y.ravel(),h.ravel(),lon,lat,interp='nn')
+
+	return h
 
 
 
@@ -990,7 +1300,7 @@ def zlevs(h,zeta,theta_s,theta_b,hc,N,type):
 
 ### FUNCTION GET_DEPTHS ##############################################
 
-def get_depths(fname,gname,tindex,type):
+def get_depths(fname,tindex,type):
 	"""
 	######################################################################
 	#
@@ -1037,7 +1347,7 @@ def get_depths(fname,gname,tindex,type):
 		return var_v
 		
 
-	h    = gname.variables['h'][:]
+	h    = fname.variables['h'][:]
 
 	zeta    = np.squeeze( fname.variables['zeta'][tindex,...] )
 	zeta[ np.where(zeta > 1e36) ] = 0
@@ -1324,5 +1634,35 @@ def wind_stress(u, v):
 	tauy=rhoa * Cd * speed * v
 
 	return taux, tauy
+	
+	
+def brunt_vaissala(rho, depth):
+    """
+    Computes Brunt-Vaisalla frequency
+    n2 = brunt_vaissala(rho)
+        rho: rho profile [1D-array] 
+        depth: depth [1D-array]
+    """    
+    drho = np.gradient(rho)
+    dz   = np.gradient(depth)
+    g    = 9.8
+    rho0 = 1024
+    N2   = (g / rho0) * (drho / dz)
+    return N2
+
+
+def burger(N2, H, f, R):
+    """
+    Computes Burger Number based on the ratio between baroclinic deformation
+    radius and curvature radius of a promontory
+    USAGE: Bu = burger(N2, H, f, R)
+    INPUT:
+        N2: brunt vaissalla frequency based on a mean rho profile of the jet
+        H:  undisturbed water depth
+        f:  coriolis parameter
+        R:  radius of curvature of the promontory
+    """
+    Bu = (N2*H**2) / (f**2 * R**2)   
+    return Bu
                                                                 
 	
