@@ -1016,43 +1016,44 @@ def add_topo(lon, lat, pm, pn, toponame):
 	x, y = np.meshgrid(x, y)
 
 	print '        Slicing topog data into ROMS domain'
+	x, y, z = subset(x, y, z, lon.min()-1, lon.max()+1, lat.min()-1, lat.max()+1)
 
-	# slicing topog into roms domain
-	xm = np.ma.masked_where(x <= lon.min()-1, x)
-	ym = np.ma.masked_where(x <= lon.min()-1, y)
-	zm = np.ma.masked_where(x <= lon.min()-1, z)
-	x  = np.ma.compress_cols(xm)
-	y  = np.ma.compress_cols(ym)
-	z  = np.ma.compress_cols(zm)
+	# # slicing topog into roms domain
+	# xm = np.ma.masked_where(x <= lon.min()-1, x)
+	# ym = np.ma.masked_where(x <= lon.min()-1, y)
+	# zm = np.ma.masked_where(x <= lon.min()-1, z)
+	# x  = np.ma.compress_cols(xm)
+	# y  = np.ma.compress_cols(ym)
+	# z  = np.ma.compress_cols(zm)
 
-	del xm, ym, zm
+	# del xm, ym, zm
 
-	xm = np.ma.masked_where(x >= lon.max()+1, x)
-	ym = np.ma.masked_where(x >= lon.max()+1, y)
-	zm = np.ma.masked_where(x >= lon.max()+1, z)
-	x  = np.ma.compress_cols(xm)
-	y  = np.ma.compress_cols(ym)
-	z  = np.ma.compress_cols(zm)
+	# xm = np.ma.masked_where(x >= lon.max()+1, x)
+	# ym = np.ma.masked_where(x >= lon.max()+1, y)
+	# zm = np.ma.masked_where(x >= lon.max()+1, z)
+	# x  = np.ma.compress_cols(xm)
+	# y  = np.ma.compress_cols(ym)
+	# z  = np.ma.compress_cols(zm)
 
-	del xm, ym, zm
+	# del xm, ym, zm
 
-	xm = np.ma.masked_where(y <= lat.min()-1, x)
-	ym = np.ma.masked_where(y <= lat.min()-1, y)
-	zm = np.ma.masked_where(y <= lat.min()-1, z)
-	x  = np.ma.compress_rows(xm)
-	y  = np.ma.compress_rows(ym)
-	z  = np.ma.compress_rows(zm)
+	# xm = np.ma.masked_where(y <= lat.min()-1, x)
+	# ym = np.ma.masked_where(y <= lat.min()-1, y)
+	# zm = np.ma.masked_where(y <= lat.min()-1, z)
+	# x  = np.ma.compress_rows(xm)
+	# y  = np.ma.compress_rows(ym)
+	# z  = np.ma.compress_rows(zm)
 
-	del xm, ym, zm
+	# del xm, ym, zm
 
-	xm = np.ma.masked_where(y >= lat.max()+1, x)
-	ym = np.ma.masked_where(y >= lat.max()+1, y)
-	zm = np.ma.masked_where(y >= lat.max()+1, z)
-	x  = np.ma.compress_rows(xm)
-	y  = np.ma.compress_rows(ym)
-	z  = np.ma.compress_rows(zm)
+	# xm = np.ma.masked_where(y >= lat.max()+1, x)
+	# ym = np.ma.masked_where(y >= lat.max()+1, y)
+	# zm = np.ma.masked_where(y >= lat.max()+1, z)
+	# x  = np.ma.compress_rows(xm)
+	# y  = np.ma.compress_rows(ym)
+	# z  = np.ma.compress_rows(zm)
 
-	del xm, ym, zm
+	# del xm, ym, zm
 
 	dxr = np.mean( 1/pm )
 	dyr = np.mean( 1/pn )
@@ -1063,6 +1064,8 @@ def add_topo(lon, lat, pm, pn, toponame):
 	# grid resolution to avoid unecessary heavy computations 
 	 
 	d  = int(np.floor( dxr/dxt )) 
+	if d == 0:
+		d = 1
 	x  = x[0::d, 0::d]
 	y  = y[0::d, 0::d]
 	z  = z[0::d, 0::d]
