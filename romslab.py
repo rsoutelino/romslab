@@ -103,6 +103,7 @@ class RomsGrid(object):
         self.latu  = self.ncfile.variables['lat_u'][:]
         self.lonv  = self.ncfile.variables['lon_v'][:]
         self.latv  = self.ncfile.variables['lat_v'][:]
+        self.h     = self.ncfile.variables['h'][:]
         self.maskr = self.ncfile.variables['mask_rho'][:]
         self.masku = self.ncfile.variables['mask_u'][:]
         self.maskv = self.ncfile.variables['mask_v'][:]
