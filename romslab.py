@@ -3,7 +3,8 @@
 # Owner: Rafael Soutelino - rsoutelino@gmail.com
 # Committers: Andre Lobato - andrefelipelobato@gmail.com
 # Last modification: Mar, 2012
-#####################################################################
+######################################################################
+###
 from dateutil.parser import parse
 import numpy as np
 import pylab as pl
