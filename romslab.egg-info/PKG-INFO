@@ -1,0 +1,49 @@
+Metadata-Version: 1.1
+Name: romslab
+Version: 0.2
+Summary: Module for oceanographic data analysis
+Home-page: https://github.com/rsoutelino/romslab/
+Author: Rafael Soutelino
+Author-email: rsoutelino@gmail.com
+License: Copyright Notice and Statement for the oceans project:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+Download-URL: https://github.com/rsoutelino/romslab/
+Description: Suite of Python tools to work with ROMS ocean model
+        Author: Rafael Soutelino - rsoutelino@gmail.com
+        Maintaner: Rafael Soutelino - rsoutelino@gmail.com
+        Contributors: Andre Lobato - andrefelipelobato@gmail.com
+                      Gabriel Serrato - gabrielsmsilva@gmail.com
+        
+        ## Under Construction !!
+        
+Keywords: oceanography,ocean modeling,roms
+Platform: any
+Classifier: Development Status :: Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: License :: Public License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Education
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
