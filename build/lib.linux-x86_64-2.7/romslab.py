@@ -36,13 +36,16 @@ class RunSetup(object):
         for l in range(imp_line, imp_line + 18):
             key, value = lines[l].split('=', 1)
             key = key.strip()
-            value = value.strip()
+            try:
+                value = float(value.strip())
+            except ValueError:
+                value = value.strip()
             # put all the information inside the class dictionary 
             self.__dict__[key.lower()] = value
 
         lims = self.lims.split(',')
-        self.lonmin, self.lonmax = lims[0], lims[1]
-        self.latmin, self.latmax = lims[2], lims[3]
+        self.lonmin, self.lonmax = float(lims[0]), float(lims[1])
+        self.latmin, self.latmax = float(lims[2]), float(lims[3])
         self.hmaxc = self.hmin
 
 ### CLASS RomsGrid ##################################################
