@@ -46,7 +46,7 @@ class RunSetup(object):
         lims = self.lims.split(',')
         self.lonmin, self.lonmax = float(lims[0]), float(lims[1])
         self.latmin, self.latmax = float(lims[2]), float(lims[3])
-        self.hmaxc = self.hmin
+        self.hmaxc = self.hmin*10
 
 ### CLASS RomsGrid ##################################################
 
