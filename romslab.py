@@ -701,24 +701,20 @@ def spheric_dist(lat1,lat2,lon1,lon2):
     #  Last Modification: Aug, 2010
     ################################################################    
     """
-
-
+    ## Mean radius of the Earth.
     R = 6367442.76
 
-#  Determine proper longitudinal shift.
-
+    ##  Determine proper longitudinal shift.
     l = np.abs(lon2-lon1)
     l[np.where(l >= 180)] = 360 - l[np.where(l >= 180)]
                   
-#  Convert Decimal degrees to radians.
-
-    deg2rad = np.pi/180
+    ##  Convert Decimal degrees to radians.
+    deg2rad = np.pi/180.
     lat1    = lat1*deg2rad
     lat2    = lat2*deg2rad
     l       = l*deg2rad
 
-#  Compute the distances
-
+    ##  Compute the distances.
     dist   = R * np.arcsin( np.sqrt( ( (np.sin(l) * np.cos(lat2) )**2 )\
     + (((np.sin(lat2) * np.cos(lat1)) - (np.sin(lat1) * np.cos(lat2)\
     * np.cos(l)))**2) ) )
@@ -771,36 +767,33 @@ def get_metrics(latu, lonu, latv, lonv):
     dndx  = np.zeros([Mp, Lp])
     dmde  = np.zeros([Mp, Lp])
 
-    lat1 = latu[:,np.arange(0,Lm)]
-    lat2 = latu[:,np.arange(1,L)]
-    lon1 = lonu[:,np.arange(0,Lm)]
-    lon2 = lonu[:,np.arange(1,L)]
+    lat1 = latu[:,:Lm]
+    lat2 = latu[:,1:L]
+    lon1 = lonu[:,:Lm]
+    lon2 = lonu[:,1:L]
 
-    dx[:,np.arange(1,L)] = spheric_dist(lat1, lat2, lon1, lon2)
+    dx[:,1:L] = spheric_dist(lat1, lat2, lon1, lon2)
 
-    dx[:,0]    = dx[:,1]
-    dx[:,Lp-1] = dx[:,L-1]
+    dx[:,0] = dx[:,1]
+    dx[:,L] = dx[:,Lm]
 
-    lat1 = latv[np.arange(0,Mm),:]
-    lat2 = latv[np.arange(1,M),:]
-    lon1 = lonv[np.arange(0,Mm),:]
-    lon2 = lonv[np.arange(1,M),:]
+    lat1 = latv[:Mm,:]
+    lat2 = latv[1:M,:]
+    lon1 = lonv[:Mm,:]
+    lon2 = lonv[1:M,:]
 
-    dy[np.arange(1,M),:] = spheric_dist(lat1, lat2, lon1, lon2)
+    dy[1:M,:] = spheric_dist(lat1, lat2, lon1, lon2)
 
-    dy[0,:]    = dy[1,:]
-    dy[Mp-1,:] = dy[M-1,:]
+    dy[0,:] = dy[1,:]
+    dy[M,:] = dy[Mm,:]
 
-    pm  = 1/dx
-    pn  = 1/dy    
+    ## pm and pn.
+    pm = 1./dx
+    pn = 1./dy
 
-    #  dndx and dmde
-
-    pn2 = pn[1:-2, 2:-1]; pn3 = pn[1:-2, 2:-1]
-    dndx[1:-2, 1:-2] = 0.5 * (1/pn2 - 1/pn3)
-
-    pm2 = pm[2:-1, 1:-2]; pm3 = pm[2:-1, 1:-2]
-    dmde[1:-2, 1:-2] = 0.5 * (1/pm2 - 1/pm3)
+    ## dndx and dmde, using centered differences.
+    dndx[1:M,1:L] = 0.5*(1./pn[1:M,2:] - 1./pn[1:M,:Lm])
+    dmde[1:M,1:L] = 0.5*(1./pm[2:,1:L] - 1./pm[:Mm,1:L])
 
     return pm, pn, dndx, dmde
 
