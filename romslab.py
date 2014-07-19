@@ -14,6 +14,7 @@ from mpl_toolkits.basemap import Basemap
 import scipy.io as sp  
 import datetime as dt
 import netCDF4 as nc
+import yaml
 
 ### CLASS RunSetup #################################################
 
@@ -24,29 +25,16 @@ class RunSetup(object):
     """ROMS domain config file"""
     def __init__(self, filename, imp):
         self.filename = filename
-        f = open(filename)
+        self.id = imp
+        f =  yaml.load( open(filename) )
+        configs = f[imp]
+        for key in configs.keys():
+            execstr = "self.%s = configs[key]" %key
+            exec(execstr)
         
-        count = 0
-        lines = f.readlines()
-        for line in lines:
-            if imp in line:
-                imp_line = count
-            count += 1
-
-        for l in range(imp_line, imp_line + 18):
-            key, value = lines[l].split('=', 1)
-            key = key.strip()
-            try:
-                value = float(value.strip())
-            except ValueError:
-                value = value.strip()
-            # put all the information inside the class dictionary 
-            self.__dict__[key.lower()] = value
-
-        lims = self.lims.split(',')
-        self.lonmin, self.lonmax = float(lims[0]), float(lims[1])
-        self.latmin, self.latmax = float(lims[2]), float(lims[3])
-        self.hmaxc = self.hmin*10
+        self.lonmin, self.lonmax = self.lims[0], self.lims[1]
+        self.latmin, self.latmax = self.lims[2], self.lims[3]
+        self.hmaxc = self.hmin
 
 ### CLASS RomsGrid ##################################################
 
@@ -1312,7 +1300,10 @@ def get_depths(fname,tindex,type):
         return var_v
         
 
-    h    = fname.variables['h'][:]
+    try:
+        h    = fname.variables['h'][:]
+    except KeyError:
+        h    = fname.variables['dep'][:]
 
     zeta    = np.squeeze( fname.variables['zeta'][tindex,...] )
     zeta[ np.where(zeta > 1e36) ] = 0
@@ -1630,4 +1621,126 @@ def burger(N2, H, f, R):
     Bu = (N2*H**2) / (f**2 * R**2)   
     return Bu
                                                                 
-    
+
+def rx1(z_w, rmask):
+    """
+    function rx1 = rx1(z_w,rmask)
+ 
+    This function computes the bathymetry slope from a SCRUM NetCDF file.
+
+    On Input:
+       z_w         layer depth.
+       rmask       Land/Sea masking at RHO-points.
+ 
+    On Output:
+       rx1         Haney stiffness ratios.
+    """
+
+    N, Lp, Mp = z_w.shape
+    L=Lp-1
+    M=Mp-1
+
+    #  Land/Sea mask on U-points.
+    umask = np.zeros((L,Mp))
+    for j in range(Mp):
+        for i in range(1,Lp):
+            umask[i-1,j] = rmask[i,j] * rmask[i-1,j]
+
+    #  Land/Sea mask on V-points.
+    vmask = np.zeros((Lp,M))
+    for j in range(1,Mp):
+        for i in range(Lp):
+            vmask[i,j-1] = rmask[i,j] * rmask[i,j-1]
+
+    #-------------------------------------------------------------------
+    #  Compute R-factor.
+    #-------------------------------------------------------------------
+
+    zx = np.zeros((N,L,Mp))
+    zy = np.zeros((N,Lp,M))
+
+    for k in range(N):
+        zx[k,:] = abs((z_w[k,1:,:] - z_w[k,:-1,:] + z_w[k-1,1:,:] - z_w[k-1,:-1,:]) / 
+                      (z_w[k,1:,:] + z_w[k,:-1,:] - z_w[k-1,1:,:] - z_w[k-1,:-1,:]))
+        zy[k,:] = abs((z_w[k,:,1:] - z_w[k,:,:-1] + z_w[k-1,:,1:] - z_w[k-1,:,:-1]) /
+                      (z_w[k,:,1:] + z_w[k,:,:-1] - z_w[k-1,:,1:] - z_w[k-1,:,:-1]))
+        zx[k,:] = zx[k,:] * umask
+        zy[k,:] = zy[k,:] * vmask
+
+
+    r = np.maximum(np.maximum(zx[:,:,:-1],zx[:,:,1:]), np.maximum(zy[:,:-1,:],zy[:,1:,:]))
+
+    rx1 = np.amax(r, axis=0)
+
+    rmin = rx1.min()
+    rmax = rx1.max()
+    ravg = rx1.mean()
+    rmed = np.median(rx1)
+
+    print '  '
+    print 'Minimum r-value = ', rmin
+    print 'Maximum r-value = ', rmax
+    print 'Mean    r-value = ', ravg
+    print 'Median  r-value = ', rmed
+
+    return rx1
+
+
+def rx0(h, rmask):
+    """
+    function rx0 = rx0(h,rmask)
+ 
+    This function computes the bathymetry slope from a SCRUM NetCDF file.
+
+    On Input:
+       h           bathymetry at RHO-points.
+       rmask       Land/Sea masking at RHO-points.
+ 
+    On Output:
+       rx0         Beckmann and Haidvogel grid stiffness ratios.
+    """
+
+    Mp, Lp = h.shape
+    L = Lp-1
+    M = Mp-1
+
+    #  Land/Sea mask on U-points.
+    umask = np.zeros((Mp,L))
+    for j in range(Mp):
+        for i in range(1,Lp):
+            umask[j,i-1] = rmask[j,i] * rmask[j,i-1]
+
+    #  Land/Sea mask on V-points.
+    vmask = np.zeros((M,Lp))
+    for j in range(1,Mp):
+        for i in range(Lp):
+            vmask[j-1,i] = rmask[j,i] * rmask[j-1,i]
+
+    #-------------------------------------------------------------------
+    #  Compute R-factor.
+    #-------------------------------------------------------------------
+
+    hx = np.zeros((Mp,L))
+    hy = np.zeros((M,Lp))
+
+    hx = abs(h[:,1:] - h[:,:-1]) / (h[:,1:] + h[:,:-1])
+    hy = abs(h[1:,:] - h[:-1,:]) / (h[1:,:] + h[:-1,:])
+
+    hx = hx * umask
+    hy = hy * vmask
+
+    rx0 = np.maximum(np.maximum(hx[:-1,:],hx[1:,:]),np.maximum(hy[:,:-1],hy[:,1:]))
+
+    rmin = rx0.min()
+    rmax = rx0.max()
+    ravg = rx0.mean()
+    rmed = np.median(rx0)
+
+    print '  '
+    print 'Minimum r-value = ', rmin
+    print 'Maximum r-value = ', rmax
+    print 'Mean    r-value = ', ravg
+    print 'Median  r-value = ', rmed
+
+    return rx0
+
