@@ -1744,3 +1744,51 @@ def rx0(h, rmask):
 
     return rx0
 
+
+def stretching(sc, Vstretching, theta_s, theta_b):
+    """
+    Computes S-coordinates
+    INPUT:
+        sc           : normalized levels           [ndarray]
+        Vstretching  : ROMS stretching algorithm   [int]
+        theta_s      :                             [int] 
+        theta_b      :                             [int]
+        hc           :                             [int]
+    """
+    if Vstretching == 1:
+        # Song and Haidvogel, 1994
+        cff1 = 1.  / np.sinh(theta_s)
+        cff2 = 0.5 / np.tanh(0.5*theta_s)
+        C = (1.-theta_b) * cff1 * np.sinh(theta_s * sc) + \
+            theta_b * (cff2 * np.tanh( theta_s * (sc + 0.5) ) - 0.5)
+        return C
+
+    if Vstretching == 4:
+        # A. Shchepetkin (UCLA-ROMS, 2010) double vertical stretching function
+        if theta_s > 0:
+            Csur = ( 1.0 - np.cosh(theta_s*sc) ) / ( np.cosh(theta_s) -1.0 )
+        else:
+            Csur = -sc**2
+
+        if theta_b > 0:
+            Cbot = ( np.exp(theta_b*Csur)-1.0 ) / ( 1.0-np.exp(-theta_b) )
+            return Cbot
+        else:
+            return Csur
+
+def get_zlev(h, sigma, hc, sc, ssh=0., Vtransform=VTRANSFORM):
+    if Vtransform == 1: # ROMS 1999
+        hinv = 1./h
+        cff = hc * (sc - sigma)
+        if len(h.shape) > 1:
+            z0 = cff[:,None,None] + sigma[:,None,None] * h[None,:,:]
+        else:
+            z0 = cff[:,None] + sigma[:,None] * h[None,:]
+        return z0 + ssh * (1. + z0*hinv)
+
+    elif Vtransform == 2: # ROMS 2005
+        if len(h.shape) > 1:
+            z0 = ( hc*sc[:,None,None] + sigma[:,None,None]*h[None,:,:] ) / ( h[None,:,:] + hc )
+        else:
+            z0 = ( hc*sc[:,None] + sigma[:,None]*h[None,:] ) / ( h[None,:] + hc )
+        return ssh + (ssh + h) * z0
