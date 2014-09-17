@@ -101,7 +101,100 @@ class RomsHis(object):
         llclat = self.latr.min()
         urclat = self.latr.max()
         return llclon, urclon, llclat, urclat
-        
+
+### CLASS M2_diagnostics #####################################################
+
+class M2_diagnostics(object):
+    """
+    Container class for the depth-averaged (2D) momentum equation
+    diagostic terms for a ROMS run.
+
+    USAGE
+    -----
+    m2_terms = M2_diagnostics(diafile, verbose=False)
+
+    diafile is a ROMS diagnostics file (*_dia.nc). This class extracts the
+    M2 diagnostic terms provided that all are present in the file.
+
+    Returns an object with a '.xi' and a '.eta' attribute. Those are dictionaries
+    that store the <netCDF4.Variable> objects corresponding to each term.
+    """
+    def __init__(self, diafile):
+        dia = nc.Dataset(diafile)
+        self.xi = dict()
+        self.eta = dict()
+        self.xi_labels = dict()
+        self.eta_labels = dict()
+        ## Terms of the M2 balance in the XI-component.
+        self.xi['ut'] = dia.variables['ubar_accel']
+        self.xi['uux'] = dia.variables['ubar_xadv']
+        self.xi['vuy'] = dia.variables['ubar_yadv']
+        self.xi['ucor'] = dia.variables['ubar_cor']
+        self.xi['upgrd'] = dia.variables['ubar_prsgrd']
+        self.xi['uistr'] = dia.variables['ubar_hvisc']
+        self.xi['usstr'] = dia.variables['ubar_sstr']
+        self.xi['ubstr'] = dia.variables['ubar_bstr']
+        ## Terms of the M2 balance in the ETA-component.
+        self.eta['vt'] = dia.variables['vbar_accel']
+        self.eta['uvx'] = dia.variables['vbar_xadv']
+        self.eta['vvy'] = dia.variables['vbar_yadv']
+        self.eta['vcor'] = dia.variables['vbar_cor']
+        self.eta['vpgrd'] = dia.variables['vbar_prsgrd']
+        self.eta['vistr'] = dia.variables['vbar_hvisc']
+        self.eta['vsstr'] = dia.variables['vbar_sstr']
+        self.eta['vbstr'] = dia.variables['vbar_bstr']
+        self.RUN_AVERAGED = False
+
+        ## Labels of the terms of the M2 balance in the XI-component (in TeX code).
+        self.xi_labels['ut'] = ur'$\bar{u}_t$'
+        self.xi_labels['uux'] = ur'$\bar{u}\bar{u}_x$'
+        self.xi_labels['vuy'] = ur'$\bar{v}\bar{u}_y$'
+        self.xi_labels['ucor'] = ur'$-f\bar{v}$'
+        self.xi_labels['upgrd'] = ur'$-p_x/\rho_0$'
+        self.xi_labels['uistr'] = ur'$A_H$\nabla\bar{u}'
+        self.xi_labels['usstr'] = ur'$\tau_s^x/\rho_0$'
+        self.xi_labels['ubstr'] = ur'$-\tau_b^x/\rho_0$'
+        ## Labels of the terms of the M2 balance in the ETA-component (in TeX code).
+        self.eta_labels['vt'] = ur'$\bar{v}_t$'
+        self.eta_labels['uvx'] = ur'$\bar{u}\bar{v}_x$'
+        self.eta_labels['vvy'] = ur'$\bar{v}\bar{v}_y$'
+        self.eta_labels['vcor'] = ur'$f\bar{u}$'
+        self.eta_labels['vpgrd'] = ur'$-p_y/\rho_0$'
+        self.eta_labels['vistr'] = ur'$A_H$\nabla\bar{v}'
+        self.eta_labels['vsstr'] = ur'$\tau_s^y/\rho_0$'
+        self.eta_labels['vbstr'] = ur'$-\tau_b^y/\rho_0$'
+
+    def run_average(self, verbose=True):
+        """
+        USAGE
+        -----
+        m2_terms.run_average(verbose=True)
+
+        Takes the time average of all terms over
+        the entire run. Use CAUTION with very large
+        records to avoid a MemoryError.
+        """
+        if self.RUN_AVERAGED:
+            print "Terms have already been run-averaged."
+            return
+        else:
+            print "Averaging %s records together."%self.xi['ut'].shape[0]
+            for term in self.xi.iterkeys():
+                if verbose:
+                    print "Run-averaging %s term."%term
+                self.xi[term] = self.xi[term][:].mean(axis=0)
+            for term in self.eta.iterkeys():
+                if verbose:
+                    print "Run-averaging %s term."%term
+                self.eta[term] = self.eta[term][:].mean(axis=0)
+            self.RUN_AVERAGED = True
+
+            ## Move all fields to PSI-points.
+            print "Moving all fields to PSI-points."
+            for term in self.xi.iterkeys():
+                self.xi[term] = 0.5*(self.xi[term][1:,:]+self.xi[term][:-1,:])
+            for term in self.eta.iterkeys():
+                self.eta[term] = 0.5*(self.eta[term][:,1:]+self.eta[term][:,:-1])
 
 ### CLASS PlotROMS #####################################################
 
@@ -1776,7 +1869,7 @@ def stretching(sc, Vstretching, theta_s, theta_b):
         else:
             return Csur
 
-def get_zlev(h, sigma, hc, sc, ssh=0., Vtransform=VTRANSFORM):
+def get_zlev(h, sigma, hc, sc, ssh=0., Vtransform=2):
     if Vtransform == 1: # ROMS 1999
         hinv = 1./h
         cff = hc * (sc - sigma)
