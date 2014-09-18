@@ -148,7 +148,7 @@ class M2_diagnostics(object):
         self.RUN_AVERAGED = False
 
         ## Move all fields to PSI-points.
-        print "Moving all fields to PSI-points."
+        print "Moving all terms to PSI-points."
         for term in self.xi.iterkeys():
             self.xi[term] = 0.5*(self.xi[term][:,1:,:]+self.xi[term][:,:-1,:])
         for term in self.eta.iterkeys():
@@ -157,6 +157,18 @@ class M2_diagnostics(object):
         self.nt = self.xi['ut'].shape[0]
         self.x = self.diafile.variables['lon_psi'][:]
         self.y = self.diafile.variables['lat_psi'][:]
+
+        ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
+        print "Rotating all terms to (estward,northward) directions."
+        ang = self.diafile.variables['angle'][:]
+        ang = 0.5*(ang[1:,:]+ang[:-1,:])
+        ang = 0.5*(ang[:,1:]+ang[:,:-1])
+        xi_ordered = ['ut','uux','vuy','ucor','upgrd','usstr','ubstr','uistr']
+        eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
+        for termx,termy in zip(xi_ordered,eta_ordered):
+            print termx,termy
+            self.xi[termx] = + self.xi[termx]*np.cos(ang) + self.eta[termy]*np.sin(ang)
+            self.eta[termy] = - self.xi[termx]*np.sin(ang) + self.eta[termy]*np.cos(ang)
 
         ## Labels of the terms of the M2 balance in the XI-component (in TeX code).
         self.xi_labels['ut'] = ur'$\bar{u}_t$'
@@ -222,6 +234,28 @@ class M2_diagnostics(object):
                 self.eta[term] = spint.griddata(pts, self.eta[term].ravel(), ipts, method='linear')
         else:
             print "Not implemented yet."
+
+    def rotate(self, ang_rot, degrees=True):
+        """
+        USAGE
+        -----
+        m2_terms.rotate(ang_rot, degrees=True)
+
+        Rotates all terms from (eastward,northward) axes to arbitrary (x*,y*) axes,
+        e.g., an isobath-following coordinate system. if 'ang_rot' is a scalar,
+        all points are rotated by the same angle. If 'ang_rot' is an array the same
+        shape as the terms, the rotation is done point-wise.
+        """
+        print "Rotating all terms to (x*,y*) directions."
+        if degrees:
+            ang_rot = ang_rot*np.pi/180. # Degrees to radians.
+
+        xi_ordered = ['ut','uux','vuy','ucor','upgrd','usstr','ubstr','uistr']
+        eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
+        for termx,termy in zip(xi_ordered,eta_ordered):
+            print termx,termy
+            self.xi[termx] = + self.xi[termx]*np.cos(ang_rot) + self.eta[termy]*np.sin(ang_rot)
+            self.eta[termy] = - self.xi[termx]*np.sin(ang_rot) + self.eta[termy]*np.cos(ang_rot)
 
 ### CLASS PlotROMS #####################################################
 
