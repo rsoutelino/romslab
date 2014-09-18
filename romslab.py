@@ -10,6 +10,7 @@ import pylab as pl
 import matplotlib.pyplot as plt
 from matplotlib import delaunay
 from matplotlib.mlab import griddata
+import scipy.interpolate as spint
 from mpl_toolkits.basemap import Basemap
 import scipy.io as sp  
 import datetime as dt
@@ -143,7 +144,19 @@ class M2_diagnostics(object):
         self.eta['vistr'] = dia.variables['vbar_hvisc']
         self.eta['vsstr'] = dia.variables['vbar_sstr']
         self.eta['vbstr'] = dia.variables['vbar_bstr']
+        self.diafile = dia
         self.RUN_AVERAGED = False
+
+        ## Move all fields to PSI-points.
+        print "Moving all fields to PSI-points."
+        for term in self.xi.iterkeys():
+            self.xi[term] = 0.5*(self.xi[term][:,1:,:]+self.xi[term][:,:-1,:])
+        for term in self.eta.iterkeys():
+            self.eta[term] = 0.5*(self.eta[term][:,:,1:]+self.eta[term][:,:,:-1])
+
+        self.nt = self.xi['ut'].shape[0]
+        self.x = self.diafile.variables['lon_psi'][:]
+        self.y = self.diafile.variables['lat_psi'][:]
 
         ## Labels of the terms of the M2 balance in the XI-component (in TeX code).
         self.xi_labels['ut'] = ur'$\bar{u}_t$'
@@ -189,12 +202,26 @@ class M2_diagnostics(object):
                 self.eta[term] = self.eta[term][:].mean(axis=0)
             self.RUN_AVERAGED = True
 
-            ## Move all fields to PSI-points.
-            print "Moving all fields to PSI-points."
+    def interp2line(self, ipts):
+        """
+        USAGE
+        -----
+        m2_terms.interp2line(ipts)
+
+        Interpolates the terms to a given line with coordinates 'ipts',
+        where ipts is a tuple like (lons.ravel(),lats.ravel()). Use CAUTION
+        with very large records to avoid a MemoryError.
+        """
+        pts = (self.x.ravel(),self.y.ravel())
+        if self.RUN_AVERAGED:
             for term in self.xi.iterkeys():
-                self.xi[term] = 0.5*(self.xi[term][1:,:]+self.xi[term][:-1,:])
+                print "Interpolating %s term."%term
+                self.xi[term] = spint.griddata(pts, self.xi[term].ravel(), ipts, method='linear')
             for term in self.eta.iterkeys():
-                self.eta[term] = 0.5*(self.eta[term][:,1:]+self.eta[term][:,:-1])
+                print "Interpolating %s term."%term
+                self.eta[term] = spint.griddata(pts, self.eta[term].ravel(), ipts, method='linear')
+        else:
+            print "Not implemented yet."
 
 ### CLASS PlotROMS #####################################################
 
