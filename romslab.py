@@ -163,6 +163,7 @@ class M2_diagnostics(object):
         ang = self.diafile.variables['angle'][:]
         ang = 0.5*(ang[1:,:]+ang[:-1,:])
         ang = 0.5*(ang[:,1:]+ang[:,:-1])
+        ang = -ang ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
         xi_ordered = ['ut','uux','vuy','ucor','upgrd','usstr','ubstr','uistr']
         eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
         for termx,termy in zip(xi_ordered,eta_ordered):
