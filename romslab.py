@@ -271,10 +271,10 @@ class M2_diagnostics(object):
         the next-order balance is frictional and has O(1e-6 m/s2) magnitudes and
         all the terms sum up to a residue of O(1e-7 m/s2), then an analysis of the
         leading-order terms (pressure gradient and Coriolis forces) should be consistent
-        and and allow for accurate conclusions.
+        and allow for accurate conclusions.
 
         Users may want to look for specific grid points where the terms just don't
-        add up, and mask them out of their analysis.
+        add up, and mask them out of their analyses.
         """
         residuex = np.zeros_like(self.xi['ut'])
         residuey = np.zeros_like(self.eta['vt'])
