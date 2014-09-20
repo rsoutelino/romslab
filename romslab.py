@@ -145,7 +145,7 @@ class M2_diagnostics(object):
         self.eta['vsstr'] = dia.variables['vbar_sstr']
         self.eta['vbstr'] = dia.variables['vbar_bstr']
         self.diafile = dia
-        self.RUN_AVERAGED = False
+        self._RUN_AVERAGED = False
 
         ## Move all fields to PSI-points.
         print "Moving all terms to PSI-points."
@@ -164,9 +164,9 @@ class M2_diagnostics(object):
         ang = 0.5*(ang[1:,:]+ang[:-1,:])
         ang = 0.5*(ang[:,1:]+ang[:,:-1])
         ang = -ang ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
-        xi_ordered = ['ut','uux','vuy','ucor','upgrd','usstr','ubstr','uistr']
-        eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
-        for termx,termy in zip(xi_ordered,eta_ordered):
+        self._xi_ordered = ['ut','uux','vuy','ucor','upgrd','usstr','ubstr','uistr']
+        self._eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
+        for termx,termy in zip(self._xi_ordered,self._eta_ordered):
             print termx,termy
             self.xi[termx] = + self.xi[termx]*np.cos(ang) + self.eta[termy]*np.sin(ang)
             self.eta[termy] = - self.xi[termx]*np.sin(ang) + self.eta[termy]*np.cos(ang)
@@ -200,7 +200,7 @@ class M2_diagnostics(object):
         the entire run. Use CAUTION with very large
         records to avoid a MemoryError.
         """
-        if self.RUN_AVERAGED:
+        if self._RUN_AVERAGED:
             print "Terms have already been run-averaged."
             return
         else:
@@ -213,7 +213,7 @@ class M2_diagnostics(object):
                 if verbose:
                     print "Run-averaging %s term."%term
                 self.eta[term] = self.eta[term][:].mean(axis=0)
-            self.RUN_AVERAGED = True
+            self._RUN_AVERAGED = True
 
     def interp2line(self, ipts):
         """
@@ -226,7 +226,7 @@ class M2_diagnostics(object):
         with very large records to avoid a MemoryError.
         """
         pts = (self.x.ravel(),self.y.ravel())
-        if self.RUN_AVERAGED:
+        if self._RUN_AVERAGED:
             for term in self.xi.iterkeys():
                 print "Interpolating %s term."%term
                 self.xi[term] = spint.griddata(pts, self.xi[term].ravel(), ipts, method='linear')
@@ -251,12 +251,63 @@ class M2_diagnostics(object):
         if degrees:
             ang_rot = ang_rot*np.pi/180. # Degrees to radians.
 
-        xi_ordered = ['ut','uux','vuy','ucor','upgrd','usstr','ubstr','uistr']
-        eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
-        for termx,termy in zip(xi_ordered,eta_ordered):
+        for termx,termy in zip(self._xi_ordered,self._eta_ordered):
             print termx,termy
             self.xi[termx] = + self.xi[termx]*np.cos(ang_rot) + self.eta[termy]*np.sin(ang_rot)
             self.eta[termy] = - self.xi[termx]*np.sin(ang_rot) + self.eta[termy]*np.cos(ang_rot)
+
+    def check_magnitudes(self):
+        """
+        USAGE
+        -----
+        m2_terms.check_magnitudes()
+
+        Displays statistics (min,mean,max) of the absolute values of each term.
+
+        If momentum was conserved exactly, then all terms would sum up to zero.
+        This is useful as a first verification of the order of magnitude to which
+        depth-averaged momentum is conserved in the solution. For example, if the
+        leading-order balance is geostrophic and has O(1e-5 m/s2) magnitudes,
+        the next-order balance is frictional and has O(1e-6 m/s2) magnitudes and
+        all the terms sum up to a residue of O(1e-7 m/s2), then an analysis of the
+        leading-order terms (pressure gradient and Coriolis forces) should be consistent
+        and and allow for accurate conclusions.
+
+        Users may want to look for specific grid points where the terms just don't
+        add up, and mask them out of their analysis.
+        """
+        residuex = np.zeros_like(self.xi['ut'])
+        residuey = np.zeros_like(self.eta['vt'])
+        print ""
+        print "Calculating magnitudes of the M2 balance terms."
+        for termx,termy in zip(self._xi_ordered,self._eta_ordered):
+            Termx = self.xi[termx]
+            Termy = self.eta[termy]
+            ## Moving local acceleration terms to the same side of the equality as the other terms.
+            if termx=='ut':
+                Termx = -Termx
+            else:
+                pass
+            if termy=='vt':
+                Termy = -Termy
+            else:
+                pass
+
+            print ""
+            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.abs(Termx).min(), np.abs(Termx).mean(), np.abs(Termx).max())
+            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.abs(Termy).min(), np.abs(Termy).mean(), np.abs(Termy).max())
+            print ""
+
+            residuex+=Termx
+            residuey+=Termy
+
+        print ""
+        print "====================="
+        print "=M2 balance residues="
+        print "====================="
+        print ""
+        print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.abs(residuex).min(), np.abs(residuex).mean(), np.abs(residuex).max())
+        print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.abs(residuey).min(), np.abs(residuey).mean(), np.abs(residuey).max())
 
 ### CLASS PlotROMS #####################################################
 
