@@ -239,7 +239,7 @@ class M2_diagnostics(object):
         else:
             print "Not implemented yet."
 
-    def rotate(self, ang_rot, degrees=True):
+    def rotate(self, ang_rot, degrees=False):
         """
         USAGE
         -----
