@@ -168,8 +168,11 @@ class M2_diagnostics(object):
         self._eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
         for termx,termy in zip(self._xi_ordered,self._eta_ordered):
             print termx,termy
-            self.xi[termx] = + self.xi[termx]*np.cos(ang) + self.eta[termy]*np.sin(ang)
-            self.eta[termy] = - self.xi[termx]*np.sin(ang) + self.eta[termy]*np.cos(ang)
+            termxi_tmp = self.xi[termx]
+            termeta_tmp = self.eta[termy]
+
+            self.xi[termx] = + termxi_tmp*np.cos(ang) + termeta_tmp*np.sin(ang)
+            self.eta[termy] = - termxi_tmp*np.sin(ang) + termeta_tmp*np.cos(ang)
 
         ## Labels of the terms of the M2 balance in the XI-component (in TeX code).
         self.xi_labels['ut'] = ur'$\bar{u}_t$'
@@ -253,8 +256,11 @@ class M2_diagnostics(object):
 
         for termx,termy in zip(self._xi_ordered,self._eta_ordered):
             print termx,termy
-            self.xi[termx] = + self.xi[termx]*np.cos(ang_rot) + self.eta[termy]*np.sin(ang_rot)
-            self.eta[termy] = - self.xi[termx]*np.sin(ang_rot) + self.eta[termy]*np.cos(ang_rot)
+            termxi_tmp = self.xi[termx]
+            termeta_tmp = self.eta[termy]
+
+            self.xi[termx] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
+            self.eta[termy] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
 
     def check_magnitudes(self):
         """
