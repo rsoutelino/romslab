@@ -114,62 +114,78 @@ class M2_diagnostics(object):
     -----
     m2_terms = M2_diagnostics(diafile, verbose=False)
 
-    diafile is a ROMS diagnostics file (*_dia.nc). This class extracts the
-    M2 diagnostic terms provided that all are present in the file.
+    diafile is a ROMS diagnostics file (*_dia.nc). This class extracts
+    all the M2 diagnostic terms available in the file.
 
     Returns an object with a '.xi' and a '.eta' attribute. Those are dictionaries
     that store the <netCDF4.Variable> objects corresponding to each term.
     """
     def __init__(self, diafile):
         dia = nc.Dataset(diafile)
+        self.diafile = dia
+        self._RUN_AVERAGED = False
         self.xi = dict()
         self.eta = dict()
         self.xi_labels = dict()
         self.eta_labels = dict()
+
+        keys_xi = ['ut','uux','vuy','ucor','upgrd','uistr','usstr','ubstr']
+        keys_eta = ['vt','uvx','vvy','vcor','vpgrd','vistr','vsstr','vbstr']
+        vals_xi = ['ubar_accel','ubar_xadv','ubar_yadv','ubar_cor',\
+                   'ubar_prsgrd','ubar_hvisc','ubar_sstr','ubar_bstr']
+        vals_eta = ['vbar_accel','vbar_xadv','vbar_yadv','vbar_cor',\
+                    'vbar_prsgrd','vbar_hvisc','vbar_sstr','vbar_bstr']
+
         ## Terms of the M2 balance in the XI-component.
-        self.xi['ut'] = dia.variables['ubar_accel']
-        self.xi['uux'] = dia.variables['ubar_xadv']
-        self.xi['vuy'] = dia.variables['ubar_yadv']
-        self.xi['ucor'] = dia.variables['ubar_cor']
-        self.xi['upgrd'] = dia.variables['ubar_prsgrd']
-        self.xi['uistr'] = dia.variables['ubar_hvisc']
-        self.xi['usstr'] = dia.variables['ubar_sstr']
-        self.xi['ubstr'] = dia.variables['ubar_bstr']
+        for key,val in zip(keys_xi,vals_xi):
+            try:
+                self.xi[key] = dia.variables[val]
+            except KeyError:
+                print "Warning: %s not found in diagnostics file."%val
+                pass
+
         ## Terms of the M2 balance in the ETA-component.
-        self.eta['vt'] = dia.variables['vbar_accel']
-        self.eta['uvx'] = dia.variables['vbar_xadv']
-        self.eta['vvy'] = dia.variables['vbar_yadv']
-        self.eta['vcor'] = dia.variables['vbar_cor']
-        self.eta['vpgrd'] = dia.variables['vbar_prsgrd']
-        self.eta['vistr'] = dia.variables['vbar_hvisc']
-        self.eta['vsstr'] = dia.variables['vbar_sstr']
-        self.eta['vbstr'] = dia.variables['vbar_bstr']
-        self.diafile = dia
-        self._RUN_AVERAGED = False
+        for key,val in zip(keys_eta,vals_eta):
+            try:
+                self.eta[key] = dia.variables[val]
+            except KeyError:
+                print "Warning: %s not found in diagnostics file."%val
+                pass
 
         ## Move all fields to PSI-points.
+        print ""
         print "Moving all terms to PSI-points."
         for term in self.xi.iterkeys():
             self.xi[term] = 0.5*(self.xi[term][:,1:,:]+self.xi[term][:,:-1,:])
         for term in self.eta.iterkeys():
             self.eta[term] = 0.5*(self.eta[term][:,:,1:]+self.eta[term][:,:,:-1])
 
-        self.nt = self.xi['ut'].shape[0]
+        self.nt = dia.variables['ocean_time'].size
         self.x = self.diafile.variables['lon_psi'][:]
         self.y = self.diafile.variables['lat_psi'][:]
 
         ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
+        print ""
         print "Rotating all terms to (estward,northward) directions."
         ang = self.diafile.variables['angle'][:]
         ang = 0.5*(ang[1:,:]+ang[:-1,:])
         ang = 0.5*(ang[:,1:]+ang[:,:-1])
         ang = -ang ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
-        self._xi_ordered = ['ut','uux','vuy','ucor','upgrd','usstr','ubstr','uistr']
-        self._eta_ordered = ['vt','uvx','vvy','vcor','vpgrd','vsstr','vbstr','vistr']
-        for termx,termy in zip(self._xi_ordered,self._eta_ordered):
-            print termx,termy
-            termxi_tmp = self.xi[termx]
-            termeta_tmp = self.eta[termy]
+
+        for termx,termy in zip(keys_xi,keys_eta):
+            try:
+                termxi_tmp = self.xi[termx]
+                print termx
+            except KeyError:
+                print "Warning: %s not available."%termx
+                continue
+
+            try:
+                termeta_tmp = self.eta[termy]
+                print termy
+            except KeyError:
+                print "Warning: %s not available."%termy
+                continue
 
             self.xi[termx] = + termxi_tmp*np.cos(ang) + termeta_tmp*np.sin(ang)
             self.eta[termy] = - termxi_tmp*np.sin(ang) + termeta_tmp*np.cos(ang)
@@ -207,7 +223,7 @@ class M2_diagnostics(object):
             print "Terms have already been run-averaged."
             return
         else:
-            print "Averaging %s records together."%self.xi['ut'].shape[0]
+            print "Averaging %s records together."%self.nt
             for term in self.xi.iterkeys():
                 if verbose:
                     print "Run-averaging %s term."%term
@@ -243,7 +259,7 @@ class M2_diagnostics(object):
         """
         USAGE
         -----
-        m2_terms.rotate(ang_rot, degrees=True)
+        m2_terms.rotate(ang_rot, degrees=False)
 
         Rotates all terms from (eastward,northward) axes to arbitrary (x*,y*) axes,
         e.g., an isobath-following coordinate system. if 'ang_rot' is a scalar,
