@@ -129,15 +129,15 @@ class M2_diagnostics(object):
         self.xi_labels = dict()
         self.eta_labels = dict()
 
-        keys_xi = ['ut','uux','vuy','ucor','upgrd','uistr','usstr','ubstr']
-        keys_eta = ['vt','uvx','vvy','vcor','vpgrd','vistr','vsstr','vbstr']
+        self.keys_xi = ['ut','uux','vuy','ucor','upgrd','uistr','usstr','ubstr']
+        self.keys_eta = ['vt','uvx','vvy','vcor','vpgrd','vistr','vsstr','vbstr']
         vals_xi = ['ubar_accel','ubar_xadv','ubar_yadv','ubar_cor',\
                    'ubar_prsgrd','ubar_hvisc','ubar_sstr','ubar_bstr']
         vals_eta = ['vbar_accel','vbar_xadv','vbar_yadv','vbar_cor',\
                     'vbar_prsgrd','vbar_hvisc','vbar_sstr','vbar_bstr']
 
         ## Terms of the M2 balance in the XI-component.
-        for key,val in zip(keys_xi,vals_xi):
+        for key,val in zip(self.keys_xi,vals_xi):
             try:
                 self.xi[key] = dia.variables[val]
             except KeyError:
@@ -145,7 +145,7 @@ class M2_diagnostics(object):
                 pass
 
         ## Terms of the M2 balance in the ETA-component.
-        for key,val in zip(keys_eta,vals_eta):
+        for key,val in zip(self.keys_eta,vals_eta):
             try:
                 self.eta[key] = dia.variables[val]
             except KeyError:
@@ -163,6 +163,8 @@ class M2_diagnostics(object):
         self.nt = dia.variables['ocean_time'].size
         self.x = self.diafile.variables['lon_psi'][:]
         self.y = self.diafile.variables['lat_psi'][:]
+        self.nx = self.x.shape
+        self.ny = self.y.shape
 
         ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
         print ""
@@ -172,7 +174,7 @@ class M2_diagnostics(object):
         ang = 0.5*(ang[:,1:]+ang[:,:-1])
         ang = -ang ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
 
-        for termx,termy in zip(keys_xi,keys_eta):
+        for termx,termy in zip(self.keys_xi,self.keys_eta):
             try:
                 termxi_tmp = self.xi[termx]
                 print termx
@@ -199,6 +201,7 @@ class M2_diagnostics(object):
         self.xi_labels['uistr'] = ur'$A_H$\nabla\bar{u}'
         self.xi_labels['usstr'] = ur'$\tau_s^x/\rho_0$'
         self.xi_labels['ubstr'] = ur'$-\tau_b^x/\rho_0$'
+
         ## Labels of the terms of the M2 balance in the ETA-component (in TeX code).
         self.eta_labels['vt'] = ur'$\bar{v}_t$'
         self.eta_labels['uvx'] = ur'$\bar{u}\bar{v}_x$'
@@ -255,6 +258,10 @@ class M2_diagnostics(object):
         else:
             print "Not implemented yet."
 
+        ## Updating array shapes.
+        self.nx = ipts[0].shape
+        self.ny = ipts[1].shape
+
     def rotate(self, ang_rot, degrees=False):
         """
         USAGE
@@ -270,10 +277,20 @@ class M2_diagnostics(object):
         if degrees:
             ang_rot = ang_rot*np.pi/180. # Degrees to radians.
 
-        for termx,termy in zip(self._xi_ordered,self._eta_ordered):
-            print termx,termy
-            termxi_tmp = self.xi[termx]
-            termeta_tmp = self.eta[termy]
+        for termx,termy in zip(self.keys_xi,self.keys_eta):
+            try:
+                termxi_tmp = self.xi[termx]
+                print termx
+            except KeyError:
+                print "Warning: %s not available."%termx
+                continue
+
+            try:
+                termeta_tmp = self.eta[termy]
+                print termy
+            except KeyError:
+                print "Warning: %s not available."%termy
+                continue
 
             self.xi[termx] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
             self.eta[termy] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
@@ -298,18 +315,29 @@ class M2_diagnostics(object):
         Users may want to look for specific grid points where the terms just don't
         add up, and mask them out of their analyses.
         """
-        residuex = np.zeros_like(self.xi['ut'])
-        residuey = np.zeros_like(self.eta['vt'])
+        residuex = np.zeros(self.nx)
+        residuey = np.zeros(self.ny)
         print ""
         print "Calculating magnitudes of the M2 balance terms."
-        for termx,termy in zip(self._xi_ordered,self._eta_ordered):
-            Termx = self.xi[termx]
-            Termy = self.eta[termy]
+        for termx,termy in zip(self.keys_xi,self.keys_eta):
+            try:
+                Termx = self.xi[termx]
+            except KeyError:
+                print "Warning: %s not available."%termx
+                continue
+
+            try:
+                Termy = self.eta[termy]
+            except KeyError:
+                print "Warning: %s not available."%termy
+                continue
+
             ## Moving local acceleration terms to the same side of the equality as the other terms.
             if termx=='ut':
                 Termx = -Termx
             else:
                 pass
+
             if termy=='vt':
                 Termy = -Termy
             else:
