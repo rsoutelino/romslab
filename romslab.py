@@ -172,7 +172,8 @@ class M2_diagnostics(object):
         ang = self.diafile.variables['angle'][:]
         ang = 0.5*(ang[1:,:]+ang[:-1,:])
         ang = 0.5*(ang[:,1:]+ang[:,:-1])
-        ang = -ang ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
+        ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
+        ang = -ang
 
         for termx,termy in zip(self.keys_xi,self.keys_eta):
             try:
@@ -189,6 +190,7 @@ class M2_diagnostics(object):
                 print "Warning: %s not available."%termy
                 continue
 
+            ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
             self.xi[termx] = + termxi_tmp*np.cos(ang) + termeta_tmp*np.sin(ang)
             self.eta[termy] = - termxi_tmp*np.sin(ang) + termeta_tmp*np.cos(ang)
 
