@@ -199,8 +199,8 @@ class M2_diagnostics(object):
         self.xi_labels['ucor'] = ur'$-f\bar{v}$'
         self.xi_labels['upgrd'] = ur'$-p_x/\rho_0$'
         self.xi_labels['uistr'] = ur'$A_H$\nabla\bar{u}'
-        self.xi_labels['usstr'] = ur'$\tau_s^x/\rho_0$'
-        self.xi_labels['ubstr'] = ur'$-\tau_b^x/\rho_0$'
+        self.xi_labels['usstr'] = ur'$\tau_s^x/(H\rho_0)$'
+        self.xi_labels['ubstr'] = ur'$-\tau_b^x/(H\rho_0)$'
 
         ## Labels of the terms of the M2 balance in the ETA-component (in TeX code).
         self.eta_labels['vt'] = ur'$\bar{v}_t$'
@@ -209,8 +209,8 @@ class M2_diagnostics(object):
         self.eta_labels['vcor'] = ur'$f\bar{u}$'
         self.eta_labels['vpgrd'] = ur'$-p_y/\rho_0$'
         self.eta_labels['vistr'] = ur'$A_H$\nabla\bar{v}'
-        self.eta_labels['vsstr'] = ur'$\tau_s^y/\rho_0$'
-        self.eta_labels['vbstr'] = ur'$-\tau_b^y/\rho_0$'
+        self.eta_labels['vsstr'] = ur'$\tau_s^y/(H\rho_0)$'
+        self.eta_labels['vbstr'] = ur'$-\tau_b^y/(H\rho_0)$'
 
     def run_average(self, verbose=True):
         """
@@ -344,8 +344,8 @@ class M2_diagnostics(object):
                 pass
 
             print ""
-            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.abs(Termx).min(), np.abs(Termx).mean(), np.abs(Termx).max())
-            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.abs(Termy).min(), np.abs(Termy).mean(), np.abs(Termy).max())
+            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
+            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
             print ""
 
             residuex+=Termx
@@ -356,8 +356,8 @@ class M2_diagnostics(object):
         print "=M2 balance residues="
         print "====================="
         print ""
-        print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.abs(residuex).min(), np.abs(residuex).mean(), np.abs(residuex).max())
-        print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.abs(residuey).min(), np.abs(residuey).mean(), np.abs(residuey).max())
+        print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
+        print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
 
 ### CLASS PlotROMS #####################################################
 
