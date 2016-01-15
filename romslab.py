@@ -1042,10 +1042,10 @@ def get_metrics(latu, lonu, latv, lonv):
 
     #  dndx and dmde
 
-    pn2 = pn[1:-2, 2:-1]; pn3 = pn[1:-2, 2:-1]
+    pn2 = pn[1:-2, 2:-1]; pn3 = pn[1:-2, 1:-2] 
     dndx[1:-2, 1:-2] = 0.5 * (1/pn2 - 1/pn3)
 
-    pm2 = pm[2:-1, 1:-2]; pm3 = pm[2:-1, 1:-2]
+    pm2 = pm[2:-1, 1:-2]; pm3 = pm[1:-2, 1:-2]
     dmde[1:-2, 1:-2] = 0.5 * (1/pm2 - 1/pm3)
 
     return pm, pn, dndx, dmde
