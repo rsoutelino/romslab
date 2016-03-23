@@ -168,7 +168,7 @@ class M2_diagnostics(object):
 
         ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
         print ""
-        print "Rotating all terms to (estward,northward) directions."
+        print "Rotating all terms to (estward,northward) coordinates."
         ang = self.diafile.variables['angle'][:]
         ang = 0.5*(ang[1:,:]+ang[:-1,:])
         ang = 0.5*(ang[:,1:]+ang[:,:-1])
@@ -334,52 +334,97 @@ class M2_diagnostics(object):
         leading-order terms (pressure gradient and Coriolis forces) should be consistent
         and allow for accurate conclusions.
 
-        Users may want to look for specific grid points where the terms just don't
-        add up, and mask them out of their analyses.
+        Users may want to look for specific grid points where the terms just don't add up.
         """
         residuex = np.zeros(self.nx)
         residuey = np.zeros(self.ny)
         print ""
         print "Calculating magnitudes of the M2 balance terms."
         for termx,termy in zip(self.keys_xi,self.keys_eta):
-            try:
-                Termx = self.xi[termx]
-            except KeyError:
-                print "Warning: %s not available."%termx
-                continue
+            if self._RUN_AVERAGED:
+                try:
+                    Termx = self.xi[termx]
+                except KeyError:
+                    print "Warning: %s not available."%termx
+                    continue
 
-            try:
-                Termy = self.eta[termy]
-            except KeyError:
-                print "Warning: %s not available."%termy
-                continue
+                try:
+                    Termy = self.eta[termy]
+                except KeyError:
+                    print "Warning: %s not available."%termy
+                    continue
 
-            ## Moving local acceleration terms to the same side of the equality as the other terms.
-            if termx=='ut':
-                Termx = -Termx
+                ## Moving local acceleration terms to the same side of the equality as the other terms.
+                if termx=='ut':
+                    Termx = -Termx
+                else:
+                    pass
+
+                if termy=='vt':
+                    Termy = -Termy
+                else:
+                    pass
+
+                print ""
+                print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
+                print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
+                print ""
+
+                residuex+=Termx
+                residuey+=Termy
+
+                print ""
+                print "===================================="
+                print "= RUN_AVERAGED M2 balance residues ="
+                print "===================================="
+                print ""
+                print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
+                print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
+                print "++++++++++++++++++++++++++++++++++++"
             else:
-                pass
+                for n in xrange(self.nt):
+                    try:
+                        Termx = self.xi[termx][n,:]
+                    except KeyError:
+                        print "Warning: %s not available."%termx
+                        continue
+                    try:
+                        Termy = self.eta[termy][n,:]
+                    except KeyError:
+                        print "Warning: %s not available."%termy
+                        continue
 
-            if termy=='vt':
-                Termy = -Termy
-            else:
-                pass
+                    ## Moving local acceleration terms to the same side of the equality as the other terms.
+                    if termx=='ut':
+                        Termx = -Termx
+                    else:
+                        pass
 
-            print ""
-            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
-            print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
-            print ""
+                    if termy=='vt':
+                        Termy = -Termy
+                    else:
+                        pass
 
-            residuex+=Termx
-            residuey+=Termy
+                    print ""
+                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
+                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
+                    print ""
 
-        print ""
-        print "====================="
-        print "=M2 balance residues="
-        print "====================="
-        print ""
-        print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
-        print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
+                    residuex+=Termx
+                    residuey+=Termy
+
+                    print ""
+                    print "====================================="
+                    print "= INSTANTANEOUS M2 balance residues ="
+                    print "Record (%d/%d)"%(n+1,self.nt)
+                    print "====================================="
+                    print ""
+                    print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
+                    print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
+                    print "++++++++++++++++++++++++++++++++++++"
+                    residuex = np.zeros(self.nx)
+                    residuey = np.zeros(self.ny)
+
 
 ### CLASS PlotROMS #####################################################
 
