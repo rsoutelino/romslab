@@ -278,9 +278,13 @@ class M2_diagnostics(object):
         if degrees:
             ang_rot = ang_rot*np.pi/180. # Degrees to radians.
 
+        if self._RUN_AVERAGED:
+            print "Rotating all records to (x*,y*) coordinates."
+        else:
+            pass
+
         for termx,termy in zip(self.keys_xi,self.keys_eta):
             if self._RUN_AVERAGED:
-                print "Rotating all records to (x*,y*) coordinates."
                 try:
                     termxi_tmp = self.xi[termx]
                     print termx
