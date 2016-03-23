@@ -275,27 +275,47 @@ class M2_diagnostics(object):
         all points are rotated by the same angle. If 'ang_rot' is an array the same
         shape as the terms, the rotation is done point-wise.
         """
-        print "Rotating all terms to (x*,y*) directions."
         if degrees:
             ang_rot = ang_rot*np.pi/180. # Degrees to radians.
 
         for termx,termy in zip(self.keys_xi,self.keys_eta):
-            try:
-                termxi_tmp = self.xi[termx]
-                print termx
-            except KeyError:
-                print "Warning: %s not available."%termx
-                continue
+            if self._RUN_AVERAGED:
+                print "Rotating all records to (x*,y*) coordinates."
+                try:
+                    termxi_tmp = self.xi[termx]
+                    print termx
+                except KeyError:
+                    print "Warning: %s not available."%termx
+                    continue
 
-            try:
-                termeta_tmp = self.eta[termy]
-                print termy
-            except KeyError:
-                print "Warning: %s not available."%termy
-                continue
+                try:
+                    termeta_tmp = self.eta[termy]
+                    print termy
+                except KeyError:
+                    print "Warning: %s not available."%termy
+                    continue
 
-            self.xi[termx] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
-            self.eta[termy] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
+                self.xi[termx] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
+                self.eta[termy] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
+            else:
+                for n in xrange(self.nt):
+                    print "Rotating record %d/%d to (x*,y*) coordinates."%(n+1,self.nt)
+                    try:
+                        termxi_tmp = self.xi[termx][n,:]
+                        print termx
+                    except KeyError:
+                        print "Warning: %s not available."%termx
+                        continue
+
+                    try:
+                        termeta_tmp = self.eta[termy][n,:]
+                        print termy
+                    except KeyError:
+                        print "Warning: %s not available."%termy
+                        continue
+
+                    self.xi[termx][n,:] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
+                    self.eta[termy][n,:] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
 
     def check_magnitudes(self):
         """
