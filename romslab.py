@@ -317,7 +317,7 @@ class M2_diagnostics(object):
                     self.xi[termx][n,:] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
                     self.eta[termy][n,:] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
 
-    def check_magnitudes(self):
+    def check_magnitudes(self, print_terms=False):
         """
         USAGE
         -----
@@ -340,8 +340,8 @@ class M2_diagnostics(object):
         residuey = np.zeros(self.ny)
         print ""
         print "Calculating magnitudes of the M2 balance terms."
-        for termx,termy in zip(self.keys_xi,self.keys_eta):
-            if self._RUN_AVERAGED:
+        if self._RUN_AVERAGED:
+            for termx,termy in zip(self.keys_xi,self.keys_eta):
                 try:
                     Termx = self.xi[termx]
                 except KeyError:
@@ -365,24 +365,26 @@ class M2_diagnostics(object):
                 else:
                     pass
 
-                print ""
-                print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
-                print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
-                print ""
+                if print_terms:
+                    print ""
+                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
+                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
+                    print ""
 
                 residuex+=Termx
                 residuey+=Termy
 
-                print ""
-                print "===================================="
-                print "= RUN_AVERAGED M2 balance residues ="
-                print "===================================="
-                print ""
-                print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
-                print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
-                print "++++++++++++++++++++++++++++++++++++"
-            else:
-                for n in xrange(self.nt):
+            print ""
+            print "================================"
+            print "RUN_AVERAGED M2 balance residues"
+            print "================================"
+            print ""
+            print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
+            print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
+            print "++++++++++++++++++++++++++++++++++++"
+        else:
+            for n in xrange(self.nt):
+                for termx,termy in zip(self.keys_xi,self.keys_eta):
                     try:
                         Termx = self.xi[termx][n,:]
                     except KeyError:
@@ -405,25 +407,25 @@ class M2_diagnostics(object):
                     else:
                         pass
 
-                    print ""
-                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
-                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
-                    print ""
+                    if print_terms:
+                        print ""
+                        print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
+                        print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
+                        print ""
 
                     residuex+=Termx
                     residuey+=Termy
 
-                    print ""
-                    print "====================================="
-                    print "= INSTANTANEOUS M2 balance residues ="
-                    print "Record (%d/%d)"%(n+1,self.nt)
-                    print "====================================="
-                    print ""
-                    print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
-                    print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
-                    print "++++++++++++++++++++++++++++++++++++"
-                    residuex = np.zeros(self.nx)
-                    residuey = np.zeros(self.ny)
+                print ""
+                print "================================================"
+                print "INSTANTANEOUS M2 balance residues (record %d/%d)"%(n+1,self.nt)
+                print "================================================"
+                print ""
+                print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
+                print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
+                print "++++++++++++++++++++++++++++++++++++"
+                residuex = np.zeros(self.nx)
+                residuey = np.zeros(self.ny)
 
 
 ### CLASS PlotROMS #####################################################
