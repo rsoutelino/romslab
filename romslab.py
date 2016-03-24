@@ -2,7 +2,7 @@
 # Python Module to work with ROMS
 # Owner: Rafael Soutelino - rsoutelino@gmail.com
 # Committers: Andre Lobato - andrefelipelobato@gmail.com
-# Last modification: Mar, 2012
+# Last modification: Mar, 2016
 #####################################################################
 from dateutil.parser import parse
 import numpy as np
