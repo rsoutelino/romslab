@@ -163,8 +163,7 @@ class M2_diagnostics(object):
         self.nt = dia.variables['ocean_time'].size
         self.x = self.diafile.variables['lon_psi'][:]
         self.y = self.diafile.variables['lat_psi'][:]
-        self.nx = self.x.shape
-        self.ny = self.y.shape
+        self.nxy = self.x.shape
 
         ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
         print ""
@@ -250,6 +249,8 @@ class M2_diagnostics(object):
         with very large records to avoid a MemoryError.
         """
         pts = (self.x.ravel(),self.y.ravel())
+        self.nxy = ipts[0].size # Updating array shapes.
+
         if self._RUN_AVERAGED:
             for term in self.xi.iterkeys():
                 print "Interpolating %s term."%term
@@ -258,11 +259,23 @@ class M2_diagnostics(object):
                 print "Interpolating %s term."%term
                 self.eta[term] = spint.griddata(pts, self.eta[term].ravel(), ipts, method='linear')
         else:
-            print "Not implemented yet."
-
-        ## Updating array shapes.
-        self.nx = ipts[0].shape
-        self.ny = ipts[1].shape
+            skel = np.zeros((self.nt, self.nxy))
+            for term in self.xi.iterkeys():
+                xiterm_aux = skel.copy()
+                print ""
+                print "Interpolating %s term."%term
+                for n in xrange(self.nt):
+                    print "Interpolating record %d/%d to line."%(n+1,self.nt)
+                    xiterm_aux[n,:] = spint.griddata(pts, self.xi[term][n,:].ravel(), ipts, method='linear')
+                self.xi[term] = xiterm_aux
+            for term in self.eta.iterkeys():
+                etaterm_aux = skel.copy()
+                print ""
+                print "Interpolating %s term."%term
+                for n in xrange(self.nt):
+                    print "Interpolating record %d/%d to line."%(n+1,self.nt)
+                    etaterm_aux[n,:] = spint.griddata(pts, self.eta[term][n,:].ravel(), ipts, method='linear')
+                self.eta[term] = etaterm_aux
 
     def rotate(self, ang_rot, degrees=False):
         """
@@ -340,8 +353,8 @@ class M2_diagnostics(object):
 
         Users may want to look for specific grid points where the terms just don't add up.
         """
-        residuex = np.zeros(self.nx)
-        residuey = np.zeros(self.ny)
+        residuex = np.zeros(self.nxy)
+        residuey = np.zeros(self.nxy)
         print ""
         print "Calculating magnitudes of the M2 balance terms."
         if self._RUN_AVERAGED:
@@ -428,8 +441,8 @@ class M2_diagnostics(object):
                 print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
                 print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
                 print "++++++++++++++++++++++++++++++++++++"
-                residuex = np.zeros(self.nx)
-                residuey = np.zeros(self.ny)
+                residuex = np.zeros(self.nxy)
+                residuey = np.zeros(self.nxy)
 
 
 ### CLASS PlotROMS #####################################################
