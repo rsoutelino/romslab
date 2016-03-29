@@ -123,7 +123,9 @@ class M2_diagnostics(object):
     def __init__(self, diafile):
         dia = nc.Dataset(diafile)
         self.diafile = dia
+        self.time = dia.variables['ocean_time'][:]/86400. # Model time in days.
         self._RUN_AVERAGED = False
+        self._TIME_AVERAGED = False
         self.xi = dict()
         self.eta = dict()
         self.xi_labels = dict()
@@ -223,8 +225,8 @@ class M2_diagnostics(object):
         the entire run. Use CAUTION with very large
         records to avoid a MemoryError.
         """
-        if self._RUN_AVERAGED:
-            print "Terms have already been run-averaged."
+        if self._RUN_AVERAGED or self._TIME_AVERAGED:
+            print "Terms have already been time-averaged."
             return
         else:
             print "Averaging %s records together."%self.nt
@@ -237,6 +239,36 @@ class M2_diagnostics(object):
                     print "Run-averaging %s term."%term
                 self.eta[term] = self.eta[term][:].mean(axis=0)
             self._RUN_AVERAGED = True
+
+    def time_average(self, verbose=True, tstart=0., tend=10.):
+        """
+        USAGE
+        -----
+        m2_terms.time_average(self, verbose=True, tstart=0., tend=10.)
+
+        Takes the time average of all terms over a specified
+        time interval [tstart, tend]. Use CAUTION with 
+        very large records to avoid a MemoryError.
+        """
+        if self._RUN_AVERAGED or self._TIME_AVERAGED:
+            print "Terms have already been time-averaged."
+            return
+        else:
+            Time = self.time
+            Time-=Time[0]
+            t1 = np.abs(Time-tstart).argmin()
+            t2 = np.abs(Time-tend).argmin()
+            time = Time[t1:t2]
+            print "Averaging records between days %.2f and %.2f."%(self.time[t1], self.time[t2])
+            for term in self.xi.iterkeys():
+                if verbose:
+                    print "Time-averaging %s term."%term
+                self.xi[term] = self.xi[term][t1:t2,:].mean(axis=0)
+            for term in self.eta.iterkeys():
+                if verbose:
+                    print "Time-averaging %s term."%term
+                self.eta[term] = self.eta[term][t1:t2,:].mean(axis=0)
+            self._TIME_AVERAGED = True
 
     def interp2line(self, ipts):
         """
@@ -251,7 +283,7 @@ class M2_diagnostics(object):
         pts = (self.x.ravel(),self.y.ravel())
         self.nxy = ipts[0].size # Updating array shapes.
 
-        if self._RUN_AVERAGED:
+        if self._RUN_AVERAGED or self._TIME_AVERAGED:
             for term in self.xi.iterkeys():
                 print "Interpolating %s term."%term
                 self.xi[term] = spint.griddata(pts, self.xi[term].ravel(), ipts, method='linear')
@@ -291,13 +323,13 @@ class M2_diagnostics(object):
         if degrees:
             ang_rot = ang_rot*np.pi/180. # Degrees to radians.
 
-        if self._RUN_AVERAGED:
+        if self._RUN_AVERAGED or self._TIME_AVERAGED:
             print "Rotating all records to (x*,y*) coordinates."
         else:
             pass
 
         for termx,termy in zip(self.keys_xi,self.keys_eta):
-            if self._RUN_AVERAGED:
+            if self._RUN_AVERAGED or self._TIME_AVERAGED:
                 try:
                     termxi_tmp = self.xi[termx]
                     print termx
@@ -357,7 +389,7 @@ class M2_diagnostics(object):
         residuey = np.zeros(self.nxy)
         print ""
         print "Calculating magnitudes of the M2 balance terms."
-        if self._RUN_AVERAGED:
+        if self._RUN_AVERAGED or self._TIME_AVERAGED:
             for termx,termy in zip(self.keys_xi,self.keys_eta):
                 try:
                     Termx = self.xi[termx]
