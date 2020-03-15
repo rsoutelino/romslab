@@ -143,7 +143,7 @@ class M2_diagnostics(object):
             try:
                 self.xi[key] = dia.variables[val]
             except KeyError:
-                print "Warning: %s not found in diagnostics file."%val
+                print("Warning: %s not found in diagnostics file."%val)
                 pass
 
         ## Terms of the M2 balance in the ETA-component.
@@ -151,12 +151,12 @@ class M2_diagnostics(object):
             try:
                 self.eta[key] = dia.variables[val]
             except KeyError:
-                print "Warning: %s not found in diagnostics file."%val
+                print("Warning: %s not found in diagnostics file."%val)
                 pass
 
         ## Move all fields to PSI-points.
-        print ""
-        print "Moving all terms to PSI-points."
+        print("\n")
+        print("Moving all terms to PSI-points.")
         for term in self.xi.iterkeys():
             self.xi[term] = 0.5*(self.xi[term][:,1:,:]+self.xi[term][:,:-1,:])
         for term in self.eta.iterkeys():
@@ -168,8 +168,8 @@ class M2_diagnostics(object):
         self.nxy = self.x.shape
 
         ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
-        print ""
-        print "Rotating all terms to (estward,northward) coordinates."
+        print("\n")
+        print("Rotating all terms to (estward,northward) coordinates.")
         ang = self.diafile.variables['angle'][:]
         ang = 0.5*(ang[1:,:]+ang[:-1,:])
         ang = 0.5*(ang[:,1:]+ang[:,:-1])
@@ -179,16 +179,16 @@ class M2_diagnostics(object):
         for termx,termy in zip(self.keys_xi,self.keys_eta):
             try:
                 termxi_tmp = self.xi[termx]
-                print termx
+                print(termx)
             except KeyError:
-                print "Warning: %s not available."%termx
+                print("Warning: %s not available."%termx)
                 continue
 
             try:
                 termeta_tmp = self.eta[termy]
-                print termy
+                print(termy)
             except KeyError:
-                print "Warning: %s not available."%termy
+                print("Warning: %s not available."%termy)
                 continue
 
             ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
@@ -226,17 +226,17 @@ class M2_diagnostics(object):
         records to avoid a MemoryError.
         """
         if self._RUN_AVERAGED or self._TIME_AVERAGED:
-            print "Terms have already been time-averaged."
+            print("Terms have already been time-averaged.")
             return
         else:
-            print "Averaging %s records together."%self.nt
+            print("Averaging %s records together."%self.nt)
             for term in self.xi.iterkeys():
                 if verbose:
-                    print "Run-averaging %s term."%term
+                    print("Run-averaging %s term."%term)
                 self.xi[term] = self.xi[term][:].mean(axis=0)
             for term in self.eta.iterkeys():
                 if verbose:
-                    print "Run-averaging %s term."%term
+                    print("Run-averaging %s term."%term)
                 self.eta[term] = self.eta[term][:].mean(axis=0)
             self._RUN_AVERAGED = True
 
@@ -251,7 +251,7 @@ class M2_diagnostics(object):
         very large records to avoid a MemoryError.
         """
         if self._RUN_AVERAGED or self._TIME_AVERAGED:
-            print "Terms have already been time-averaged."
+            print("Terms have already been time-averaged.")
             return
         else:
             Time = self.time
@@ -259,14 +259,14 @@ class M2_diagnostics(object):
             t1 = np.abs(Time-tstart).argmin()
             t2 = np.abs(Time-tend).argmin()
             time = Time[t1:t2]
-            print "Averaging records between days %.2f and %.2f."%(self.time[t1], self.time[t2])
+            print("Averaging records between days %.2f and %.2f."%(self.time[t1], self.time[t2]))
             for term in self.xi.iterkeys():
                 if verbose:
-                    print "Time-averaging %s term."%term
+                    print("Time-averaging %s term."%term)
                 self.xi[term] = self.xi[term][t1:t2,:].mean(axis=0)
             for term in self.eta.iterkeys():
                 if verbose:
-                    print "Time-averaging %s term."%term
+                    print("Time-averaging %s term."%term)
                 self.eta[term] = self.eta[term][t1:t2,:].mean(axis=0)
             self._TIME_AVERAGED = True
 
@@ -285,27 +285,27 @@ class M2_diagnostics(object):
 
         if self._RUN_AVERAGED or self._TIME_AVERAGED:
             for term in self.xi.iterkeys():
-                print "Interpolating %s term."%term
+                print("Interpolating %s term."%term)
                 self.xi[term] = spint.griddata(pts, self.xi[term].ravel(), ipts, method='linear')
             for term in self.eta.iterkeys():
-                print "Interpolating %s term."%term
+                print("Interpolating %s term."%term)
                 self.eta[term] = spint.griddata(pts, self.eta[term].ravel(), ipts, method='linear')
         else:
             skel = np.zeros((self.nt, self.nxy))
             for term in self.xi.iterkeys():
                 xiterm_aux = skel.copy()
-                print ""
-                print "Interpolating %s term."%term
+                print("\n")
+                print("Interpolating %s term."%term)
                 for n in xrange(self.nt):
-                    print "Interpolating record %d/%d to line."%(n+1,self.nt)
+                    print("Interpolating record %d/%d to line."%(n+1,self.nt))
                     xiterm_aux[n,:] = spint.griddata(pts, self.xi[term][n,:].ravel(), ipts, method='linear')
                 self.xi[term] = xiterm_aux
             for term in self.eta.iterkeys():
                 etaterm_aux = skel.copy()
-                print ""
-                print "Interpolating %s term."%term
+                print("\n")
+                print("Interpolating %s term."%term)
                 for n in xrange(self.nt):
-                    print "Interpolating record %d/%d to line."%(n+1,self.nt)
+                    print("Interpolating record %d/%d to line."%(n+1,self.nt))
                     etaterm_aux[n,:] = spint.griddata(pts, self.eta[term][n,:].ravel(), ipts, method='linear')
                 self.eta[term] = etaterm_aux
 
@@ -324,7 +324,7 @@ class M2_diagnostics(object):
             ang_rot = ang_rot*np.pi/180. # Degrees to radians.
 
         if self._RUN_AVERAGED or self._TIME_AVERAGED:
-            print "Rotating all records to (x*,y*) coordinates."
+            print("Rotating all records to (x*,y*) coordinates.")
         else:
             pass
 
@@ -332,35 +332,35 @@ class M2_diagnostics(object):
             if self._RUN_AVERAGED or self._TIME_AVERAGED:
                 try:
                     termxi_tmp = self.xi[termx]
-                    print termx
+                    print(termx)
                 except KeyError:
-                    print "Warning: %s not available."%termx
+                    print("Warning: %s not available."%termx)
                     continue
 
                 try:
                     termeta_tmp = self.eta[termy]
-                    print termy
+                    print(termy)
                 except KeyError:
-                    print "Warning: %s not available."%termy
+                    print("Warning: %s not available."%termy)
                     continue
 
                 self.xi[termx] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
                 self.eta[termy] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
             else:
                 for n in xrange(self.nt):
-                    print "Rotating record %d/%d to (x*,y*) coordinates."%(n+1,self.nt)
+                    print("Rotating record %d/%d to (x*,y*) coordinates."%(n+1,self.nt))
                     try:
                         termxi_tmp = self.xi[termx][n,:]
-                        print termx
+                        print(termx)
                     except KeyError:
-                        print "Warning: %s not available."%termx
+                        print("Warning: %s not available."%termx)
                         continue
 
                     try:
                         termeta_tmp = self.eta[termy][n,:]
-                        print termy
+                        print(termy)
                     except KeyError:
-                        print "Warning: %s not available."%termy
+                        print("Warning: %s not available."%termy)
                         continue
 
                     self.xi[termx][n,:] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
@@ -387,20 +387,20 @@ class M2_diagnostics(object):
         """
         residuex = np.zeros(self.nxy)
         residuey = np.zeros(self.nxy)
-        print ""
-        print "Calculating magnitudes of the M2 balance terms."
+        print("\n")
+        print("Calculating magnitudes of the M2 balance terms.")
         if self._RUN_AVERAGED or self._TIME_AVERAGED:
             for termx,termy in zip(self.keys_xi,self.keys_eta):
                 try:
                     Termx = self.xi[termx]
                 except KeyError:
-                    print "Warning: %s not available."%termx
+                    print("Warning: %s not available."%termx)
                     continue
 
                 try:
                     Termy = self.eta[termy]
                 except KeyError:
-                    print "Warning: %s not available."%termy
+                    print("Warning: %s not available."%termy)
                     continue
 
                 ## Moving local acceleration terms to the same side of the equality as the other terms.
@@ -415,34 +415,34 @@ class M2_diagnostics(object):
                     pass
 
                 if print_terms:
-                    print ""
-                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
-                    print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
-                    print ""
+                    print("\n")
+                    print("%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx))))
+                    print("%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy))))
+                    print("\n")
 
                 residuex+=Termx
                 residuey+=Termy
 
-            print ""
-            print "================================"
-            print "RUN_AVERAGED M2 balance residues"
-            print "================================"
-            print ""
-            print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
-            print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
-            print "++++++++++++++++++++++++++++++++++++"
+            print("\n")
+            print("================================")
+            print("RUN_AVERAGED M2 balance residues")
+            print("================================")
+            print("\n")
+            print("XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex))))
+            print("ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey))))
+            print("++++++++++++++++++++++++++++++++++++")
         else:
             for n in xrange(self.nt):
                 for termx,termy in zip(self.keys_xi,self.keys_eta):
                     try:
                         Termx = self.xi[termx][n,:]
                     except KeyError:
-                        print "Warning: %s not available."%termx
+                        print("Warning: %s not available."%termx)
                         continue
                     try:
                         Termy = self.eta[termy][n,:]
                     except KeyError:
-                        print "Warning: %s not available."%termy
+                        print("Warning: %s not available."%termy)
                         continue
 
                     ## Moving local acceleration terms to the same side of the equality as the other terms.
@@ -457,22 +457,22 @@ class M2_diagnostics(object):
                         pass
 
                     if print_terms:
-                        print ""
-                        print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx)))
-                        print "%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy)))
-                        print ""
+                        print("\n")
+                        print("%s (min,mean,max)   %.1e  %.1e  %.1e"%(termx,np.nanmin(np.abs(Termx)), np.nanmean(np.abs(Termx)), np.nanmax(np.abs(Termx))))
+                        print("%s (min,mean,max)   %.1e  %.1e  %.1e"%(termy,np.nanmin(np.abs(Termy)), np.nanmean(np.abs(Termy)), np.nanmax(np.abs(Termy))))
+                        print("\n")
 
                     residuex+=Termx
                     residuey+=Termy
 
-                print ""
-                print "================================================"
-                print "INSTANTANEOUS M2 balance residues (record %d/%d)"%(n+1,self.nt)
-                print "================================================"
-                print ""
-                print "XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex)))
-                print "ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey)))
-                print "++++++++++++++++++++++++++++++++++++"
+                print("\n")
+                print("================================================")
+                print("INSTANTANEOUS M2 balance residues (record %d/%d)"%(n+1,self.nt))
+                print("================================================")
+                print("\n")
+                print("XI  (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuex)), np.nanmean(np.abs(residuex)), np.nanmax(np.abs(residuex))))
+                print("ETA (min,mean,max)   %.1e  %.1e  %.1e"%(np.nanmin(np.abs(residuey)), np.nanmean(np.abs(residuey)), np.nanmax(np.abs(residuey))))
+                print("++++++++++++++++++++++++++++++++++++")
                 residuex = np.zeros(self.nxy)
                 residuey = np.zeros(self.nxy)
 
@@ -500,12 +500,12 @@ class PlotROMS(object):
         
         for name, var in zip(namelist, varlist):
             try:
-                exec "self.%s = self.outfile.variables['%s']" %(name, var)
+                exec("self.%s = self.outfile.variables['%s']" %(name, var))
             except KeyError:
-                print "WARNING: ROMS output NetCDF file must contain the \
+                print("WARNING: ROMS output NetCDF file must contain the \
 variable '%s' !! \n None was assined to this attribute. Some methods may \
-not work properly.\n" %var
-                exec "self.%s = None" %name
+not work properly.\n" %var)
+                exec("self.%s = None" %name)
         
         self.lonr = self.lonr[:]; self.lonu = self.lonu[:]; self.lonv = self.lonv[:];
         self.latr = self.latr[:]; self.latu = self.latu[:]; self.latv = self.latv[:];
@@ -581,11 +581,11 @@ not work properly.\n" %var
             zv = get_depths(self.outfile, l, 'v')
             u = 0*self.lonu; v = 0*self.lonv # initializing arrays
             if nk == -1: 
-                print "\n\nSurface level was chosen! %s\n\n" % ("."*50)
+                print("\n\nSurface level was chosen! %s\n\n" % ("."*50))
                 u = self.u[l, nk,...]
                 v = self.v[l, nk,...]           
             else:
-                print "\n\nInterpolating VEL from S to Z coordinates %s\n\n" % ("."*50)
+                print("\n\nInterpolating VEL from S to Z coordinates %s\n\n" % ("."*50))
                 for a in range (0, self.im):
                     for b in range(0, self.jm-1):
                         u[a,b] = np.interp(-nk, zu[:, a, b], self.u[l, :, a, b] )
@@ -593,7 +593,7 @@ not work properly.\n" %var
                     for b in range(0, self.jm):
                         v[a,b] = np.interp(-nk, zv[:, a, b], self.v[l, :, a, b] )
 
-            print "\n\nInterpolating (u,v) to rho-points %s\n\n" % ("."*50)
+            print("\n\nInterpolating (u,v) to rho-points %s\n\n" % ("."*50))
             u = griddata(self.lonu.ravel(), self.latu.ravel(), u.ravel(),
                          self.lonr, self.latr)
             v = griddata(self.lonv.ravel(), self.latv.ravel(), v.ravel(),
@@ -604,14 +604,14 @@ not work properly.\n" %var
             
         # preparing tracer field
         if trkey:
-            exec "tmp = self.%s" % (tr)
+            exec("tmp = self.%s" % (tr))
             zt   = get_depths(self.outfile, l, 'temp')
             tracer = self.lonr*0 # initializing array
             if nk == -1:
-                print "\n\nSurface level was chosen! %s\n\n" % ("."*50)
+                print("\n\nSurface level was chosen! %s\n\n" % ("."*50))
                 tracer = tmp[l, nk,...]
             else:
-                print "\n\nInterpolating TRACER from S to Z coordinates %s\n\n" % ("."*50)
+                print("\n\nInterpolating TRACER from S to Z coordinates %s\n\n" % ("."*50))
                 for a in range (0, self.im):
                     for b in range(0, self.jm):
                         tracer[a,b] = np.interp(-nk, zt[:, a, b], tmp[l, :, a, b] )
@@ -718,7 +718,7 @@ not work properly.\n" %var
         # computing cross and along transect velocity components
         
         
-        exec "ps = p%s" %field[0]
+        exec("ps = p%s" %field[0])
         
         self.xVslice = xs
         self.yVslice = ys
@@ -1216,7 +1216,7 @@ def get_angle(latu,lonu,argu1='wgs84'):
         B   = np.sqrt( A**2 - (A*E)**2)
         EPS = E*E / ( 1. - E*E )
     else:
-        print  "Unknown spheroid was specified"
+        print ("Unknown spheroid was specified")
 
     latu = latu*np.pi / 180     # convert to radians
     lonu = lonu*np.pi / 180
@@ -1326,7 +1326,7 @@ def add_topo(lon, lat, pm, pn, toponame):
     ################################################################
     """
 
-    print '        Reading topog data'
+    print('        Reading topog data')
 
     dat = nc.Dataset(toponame)
     x   = dat.variables['lon'][0,:]
@@ -1339,7 +1339,7 @@ def add_topo(lon, lat, pm, pn, toponame):
 
     x, y = np.meshgrid(x, y)
 
-    print '        Slicing topog data into ROMS domain'
+    print('        Slicing topog data into ROMS domain')
     x, y, z = subset(x, y, z, lon.min()-1, lon.max()+1, lat.min()-1, lat.max()+1)
 
     # # slicing topog into roms domain
@@ -1395,7 +1395,7 @@ def add_topo(lon, lat, pm, pn, toponame):
     z  = z[0::d, 0::d]
     h = -z
 
-    print '        Interp topog data into ROMS grid'
+    print('        Interp topog data into ROMS grid')
 
     h = griddata(x.ravel(),y.ravel(),h.ravel(),lon,lat,interp='nn')
 
@@ -1759,8 +1759,8 @@ def smoothgrid(h,maskr,hmin,hmax_coast,rmax,n_filter_deep_topo,n_filter_final):
 
     # 1: Deep Ocean Filter
     if n_filter_deep_topo >= 1:
-        print '        Removing isolated seamounts in the deep ocean'
-        print '        ==> '+ str(n_filter_deep_topo) +' pass of selective filter'
+        print('        Removing isolated seamounts in the deep ocean')
+        print('        ==> '+ str(n_filter_deep_topo) +' pass of selective filter')
 
     #   Build a smoothing coefficient that is a linear function 
     #   of a smooth topography.
@@ -1781,14 +1781,14 @@ def smoothgrid(h,maskr,hmin,hmax_coast,rmax,n_filter_deep_topo,n_filter_final):
             h[f] = hmax_coast
       
     
-    print '        Applying filter on log(h) to reduce grad(h)/h'
+    print('        Applying filter on log(h) to reduce grad(h)/h')
     h = rotfilter(h, maskr, hmax_coast, rmax)
 
     #  Smooth the topography again to prevent 2D noise
     if n_filter_final > 1:
         
-        print '        Smooth the topography a last time to prevent 2DX noise'
-        print '        ==> '+ str(n_filter_final) +' pass of hanning smoother'
+        print('        Smooth the topography a last time to prevent 2DX noise')
+        print('        ==> '+ str(n_filter_final) +' pass of hanning smoother')
         
         for i in range( 1, int(n_filter_final) ):
             h = hanning_smoother(h)
@@ -1848,7 +1848,7 @@ def rotfilter(h, maskr, hmax_coast, rmax):
      
         rx, ry = rfact( np.exp(h) )
         r      = max(rx.max(), ry.max())
-        print 'r factor = ' + str(r)
+        print('r factor = ' + str(r))
 
 
     h = np.exp(h)
@@ -2051,11 +2051,11 @@ def rx1(z_w, rmask):
     ravg = rx1.mean()
     rmed = np.median(rx1)
 
-    print '  '
-    print 'Minimum r-value = ', rmin
-    print 'Maximum r-value = ', rmax
-    print 'Mean    r-value = ', ravg
-    print 'Median  r-value = ', rmed
+    print('  ')
+    print('Minimum r-value = ', rmin)
+    print('Maximum r-value = ', rmax)
+    print('Mean    r-value = ', ravg)
+    print('Median  r-value = ', rmed)
 
     return rx1
 
@@ -2110,11 +2110,11 @@ def rx0(h, rmask):
     ravg = rx0.mean()
     rmed = np.median(rx0)
 
-    print '  '
-    print 'Minimum r-value = ', rmin
-    print 'Maximum r-value = ', rmax
-    print 'Mean    r-value = ', ravg
-    print 'Median  r-value = ', rmed
+    print('  ')
+    print('Minimum r-value = ', rmin)
+    print('Maximum r-value = ', rmax)
+    print('Mean    r-value = ', ravg)
+    print('Median  r-value = ', rmed)
 
     return rx0
 
