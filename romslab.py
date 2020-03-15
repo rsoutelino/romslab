@@ -8,7 +8,6 @@ from dateutil.parser import parse
 import numpy as np
 import pylab as pl
 import matplotlib.pyplot as plt
-from matplotlib import delaunay
 from matplotlib.mlab import griddata
 import scipy.interpolate as spint
 from mpl_toolkits.basemap import Basemap
@@ -104,269 +103,269 @@ class RomsHis(object):
         return llclon, urclon, llclat, urclat
 
 ### CLASS M2_diagnostics #####################################################
+#TODO workout TeX code for python3
+# class M2_diagnostics(object):
+#     """
+#     Container class for the depth-averaged (2D) momentum equation
+#     diagostic terms for a ROMS run.
 
-class M2_diagnostics(object):
-    """
-    Container class for the depth-averaged (2D) momentum equation
-    diagostic terms for a ROMS run.
+#     USAGE
+#     -----
+#     m2_terms = M2_diagnostics(diafile, verbose=False)
 
-    USAGE
-    -----
-    m2_terms = M2_diagnostics(diafile, verbose=False)
+#     diafile is a ROMS diagnostics file (*_dia.nc). This class extracts
+#     all the M2 diagnostic terms available in the file.
 
-    diafile is a ROMS diagnostics file (*_dia.nc). This class extracts
-    all the M2 diagnostic terms available in the file.
+#     Returns an object with a '.xi' and a '.eta' attribute. Those are dictionaries
+#     that store the <netCDF4.Variable> objects corresponding to each term.
+#     """
+#     def __init__(self, diafile):
+#         dia = nc.Dataset(diafile)
+#         self.diafile = dia
+#         self.time = dia.variables['ocean_time'][:]/86400. # Model time in days.
+#         self._RUN_AVERAGED = False
+#         self._TIME_AVERAGED = False
+#         self.xi = dict()
+#         self.eta = dict()
+#         self.xi_labels = dict()
+#         self.eta_labels = dict()
 
-    Returns an object with a '.xi' and a '.eta' attribute. Those are dictionaries
-    that store the <netCDF4.Variable> objects corresponding to each term.
-    """
-    def __init__(self, diafile):
-        dia = nc.Dataset(diafile)
-        self.diafile = dia
-        self.time = dia.variables['ocean_time'][:]/86400. # Model time in days.
-        self._RUN_AVERAGED = False
-        self._TIME_AVERAGED = False
-        self.xi = dict()
-        self.eta = dict()
-        self.xi_labels = dict()
-        self.eta_labels = dict()
+#         self.keys_xi = ['ut','uux','vuy','ucor','upgrd','uistr','usstr','ubstr']
+#         self.keys_eta = ['vt','uvx','vvy','vcor','vpgrd','vistr','vsstr','vbstr']
+#         vals_xi = ['ubar_accel','ubar_xadv','ubar_yadv','ubar_cor',\
+#                    'ubar_prsgrd','ubar_hvisc','ubar_sstr','ubar_bstr']
+#         vals_eta = ['vbar_accel','vbar_xadv','vbar_yadv','vbar_cor',\
+#                     'vbar_prsgrd','vbar_hvisc','vbar_sstr','vbar_bstr']
 
-        self.keys_xi = ['ut','uux','vuy','ucor','upgrd','uistr','usstr','ubstr']
-        self.keys_eta = ['vt','uvx','vvy','vcor','vpgrd','vistr','vsstr','vbstr']
-        vals_xi = ['ubar_accel','ubar_xadv','ubar_yadv','ubar_cor',\
-                   'ubar_prsgrd','ubar_hvisc','ubar_sstr','ubar_bstr']
-        vals_eta = ['vbar_accel','vbar_xadv','vbar_yadv','vbar_cor',\
-                    'vbar_prsgrd','vbar_hvisc','vbar_sstr','vbar_bstr']
+#         ## Terms of the M2 balance in the XI-component.
+#         for key,val in zip(self.keys_xi,vals_xi):
+#             try:
+#                 self.xi[key] = dia.variables[val]
+#             except KeyError:
+#                 print("Warning: %s not found in diagnostics file."%val)
+#                 pass
 
-        ## Terms of the M2 balance in the XI-component.
-        for key,val in zip(self.keys_xi,vals_xi):
-            try:
-                self.xi[key] = dia.variables[val]
-            except KeyError:
-                print("Warning: %s not found in diagnostics file."%val)
-                pass
+#         ## Terms of the M2 balance in the ETA-component.
+#         for key,val in zip(self.keys_eta,vals_eta):
+#             try:
+#                 self.eta[key] = dia.variables[val]
+#             except KeyError:
+#                 print("Warning: %s not found in diagnostics file."%val)
+#                 pass
 
-        ## Terms of the M2 balance in the ETA-component.
-        for key,val in zip(self.keys_eta,vals_eta):
-            try:
-                self.eta[key] = dia.variables[val]
-            except KeyError:
-                print("Warning: %s not found in diagnostics file."%val)
-                pass
+#         ## Move all fields to PSI-points.
+#         print("\n")
+#         print("Moving all terms to PSI-points.")
+#         for term in self.xi.iterkeys():
+#             self.xi[term] = 0.5*(self.xi[term][:,1:,:]+self.xi[term][:,:-1,:])
+#         for term in self.eta.iterkeys():
+#             self.eta[term] = 0.5*(self.eta[term][:,:,1:]+self.eta[term][:,:,:-1])
 
-        ## Move all fields to PSI-points.
-        print("\n")
-        print("Moving all terms to PSI-points.")
-        for term in self.xi.iterkeys():
-            self.xi[term] = 0.5*(self.xi[term][:,1:,:]+self.xi[term][:,:-1,:])
-        for term in self.eta.iterkeys():
-            self.eta[term] = 0.5*(self.eta[term][:,:,1:]+self.eta[term][:,:,:-1])
+#         self.nt = dia.variables['ocean_time'].size
+#         self.x = self.diafile.variables['lon_psi'][:]
+#         self.y = self.diafile.variables['lat_psi'][:]
+#         self.nxy = self.x.shape
 
-        self.nt = dia.variables['ocean_time'].size
-        self.x = self.diafile.variables['lon_psi'][:]
-        self.y = self.diafile.variables['lat_psi'][:]
-        self.nxy = self.x.shape
+#         ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
+#         print("\n")
+#         print("Rotating all terms to (estward,northward) coordinates.")
+#         ang = self.diafile.variables['angle'][:]
+#         ang = 0.5*(ang[1:,:]+ang[:-1,:])
+#         ang = 0.5*(ang[:,1:]+ang[:,:-1])
+#         ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
+#         ang = -ang
 
-        ## Rotate all fields from (xi,eta) to (zonal,meridional) axes.
-        print("\n")
-        print("Rotating all terms to (estward,northward) coordinates.")
-        ang = self.diafile.variables['angle'][:]
-        ang = 0.5*(ang[1:,:]+ang[:-1,:])
-        ang = 0.5*(ang[:,1:]+ang[:,:-1])
-        ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
-        ang = -ang
+#         for termx,termy in zip(self.keys_xi,self.keys_eta):
+#             try:
+#                 termxi_tmp = self.xi[termx]
+#                 print(termx)
+#             except KeyError:
+#                 print("Warning: %s not available."%termx)
+#                 continue
 
-        for termx,termy in zip(self.keys_xi,self.keys_eta):
-            try:
-                termxi_tmp = self.xi[termx]
-                print(termx)
-            except KeyError:
-                print("Warning: %s not available."%termx)
-                continue
+#             try:
+#                 termeta_tmp = self.eta[termy]
+#                 print(termy)
+#             except KeyError:
+#                 print("Warning: %s not available."%termy)
+#                 continue
 
-            try:
-                termeta_tmp = self.eta[termy]
-                print(termy)
-            except KeyError:
-                print("Warning: %s not available."%termy)
-                continue
+#             ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
+#             self.xi[termx] = + termxi_tmp*np.cos(ang) + termeta_tmp*np.sin(ang)
+#             self.eta[termy] = - termxi_tmp*np.sin(ang) + termeta_tmp*np.cos(ang)
 
-            ## Rotation angle is from (xi,eta) to (eastward,northward) axes.
-            self.xi[termx] = + termxi_tmp*np.cos(ang) + termeta_tmp*np.sin(ang)
-            self.eta[termy] = - termxi_tmp*np.sin(ang) + termeta_tmp*np.cos(ang)
+#         ## Labels of the terms of the M2 balance in the XI-component (in TeX code).
+#         self.xi_labels['ut'] = ur'$\bar{u}_t$'
+#         self.xi_labels['uux'] = ur'$\bar{u}\bar{u}_x$'
+#         self.xi_labels['vuy'] = ur'$\bar{v}\bar{u}_y$'
+#         self.xi_labels['ucor'] = ur'$-f\bar{v}$'
+#         self.xi_labels['upgrd'] = ur'$-p_x/\rho_0$'
+#         self.xi_labels['uistr'] = ur'$A_H$\nabla\bar{u}'
+#         self.xi_labels['usstr'] = ur'$\tau_s^x/(H\rho_0)$'
+#         self.xi_labels['ubstr'] = ur'$-\tau_b^x/(H\rho_0)$'
 
-        ## Labels of the terms of the M2 balance in the XI-component (in TeX code).
-        self.xi_labels['ut'] = ur'$\bar{u}_t$'
-        self.xi_labels['uux'] = ur'$\bar{u}\bar{u}_x$'
-        self.xi_labels['vuy'] = ur'$\bar{v}\bar{u}_y$'
-        self.xi_labels['ucor'] = ur'$-f\bar{v}$'
-        self.xi_labels['upgrd'] = ur'$-p_x/\rho_0$'
-        self.xi_labels['uistr'] = ur'$A_H$\nabla\bar{u}'
-        self.xi_labels['usstr'] = ur'$\tau_s^x/(H\rho_0)$'
-        self.xi_labels['ubstr'] = ur'$-\tau_b^x/(H\rho_0)$'
+#         ## Labels of the terms of the M2 balance in the ETA-component (in TeX code).
+#         self.eta_labels['vt'] = ur'$\bar{v}_t$'
+#         self.eta_labels['uvx'] = ur'$\bar{u}\bar{v}_x$'
+#         self.eta_labels['vvy'] = ur'$\bar{v}\bar{v}_y$'
+#         self.eta_labels['vcor'] = ur'$f\bar{u}$'
+#         self.eta_labels['vpgrd'] = ur'$-p_y/\rho_0$'
+#         self.eta_labels['vistr'] = ur'$A_H$\nabla\bar{v}'
+#         self.eta_labels['vsstr'] = ur'$\tau_s^y/(H\rho_0)$'
+#         self.eta_labels['vbstr'] = ur'$-\tau_b^y/(H\rho_0)$'
 
-        ## Labels of the terms of the M2 balance in the ETA-component (in TeX code).
-        self.eta_labels['vt'] = ur'$\bar{v}_t$'
-        self.eta_labels['uvx'] = ur'$\bar{u}\bar{v}_x$'
-        self.eta_labels['vvy'] = ur'$\bar{v}\bar{v}_y$'
-        self.eta_labels['vcor'] = ur'$f\bar{u}$'
-        self.eta_labels['vpgrd'] = ur'$-p_y/\rho_0$'
-        self.eta_labels['vistr'] = ur'$A_H$\nabla\bar{v}'
-        self.eta_labels['vsstr'] = ur'$\tau_s^y/(H\rho_0)$'
-        self.eta_labels['vbstr'] = ur'$-\tau_b^y/(H\rho_0)$'
+#     def run_average(self, verbose=True):
+#         """
+#         USAGE
+#         -----
+#         m2_terms.run_average(verbose=True)
 
-    def run_average(self, verbose=True):
-        """
-        USAGE
-        -----
-        m2_terms.run_average(verbose=True)
+#         Takes the time average of all terms over
+#         the entire run. Use CAUTION with very large
+#         records to avoid a MemoryError.
+#         """
+#         if self._RUN_AVERAGED or self._TIME_AVERAGED:
+#             print("Terms have already been time-averaged.")
+#             return
+#         else:
+#             print("Averaging %s records together."%self.nt)
+#             for term in self.xi.iterkeys():
+#                 if verbose:
+#                     print("Run-averaging %s term."%term)
+#                 self.xi[term] = self.xi[term][:].mean(axis=0)
+#             for term in self.eta.iterkeys():
+#                 if verbose:
+#                     print("Run-averaging %s term."%term)
+#                 self.eta[term] = self.eta[term][:].mean(axis=0)
+#             self._RUN_AVERAGED = True
 
-        Takes the time average of all terms over
-        the entire run. Use CAUTION with very large
-        records to avoid a MemoryError.
-        """
-        if self._RUN_AVERAGED or self._TIME_AVERAGED:
-            print("Terms have already been time-averaged.")
-            return
-        else:
-            print("Averaging %s records together."%self.nt)
-            for term in self.xi.iterkeys():
-                if verbose:
-                    print("Run-averaging %s term."%term)
-                self.xi[term] = self.xi[term][:].mean(axis=0)
-            for term in self.eta.iterkeys():
-                if verbose:
-                    print("Run-averaging %s term."%term)
-                self.eta[term] = self.eta[term][:].mean(axis=0)
-            self._RUN_AVERAGED = True
+#     def time_average(self, verbose=True, tstart=0., tend=10.):
+#         """
+#         USAGE
+#         -----
+#         m2_terms.time_average(self, verbose=True, tstart=0., tend=10.)
 
-    def time_average(self, verbose=True, tstart=0., tend=10.):
-        """
-        USAGE
-        -----
-        m2_terms.time_average(self, verbose=True, tstart=0., tend=10.)
+#         Takes the time average of all terms over a specified
+#         time interval [tstart, tend]. Use CAUTION with 
+#         very large records to avoid a MemoryError.
+#         """
+#         if self._RUN_AVERAGED or self._TIME_AVERAGED:
+#             print("Terms have already been time-averaged.")
+#             return
+#         else:
+#             Time = self.time
+#             Time-=Time[0]
+#             t1 = np.abs(Time-tstart).argmin()
+#             t2 = np.abs(Time-tend).argmin()
+#             time = Time[t1:t2]
+#             print("Averaging records between days %.2f and %.2f."%(self.time[t1], self.time[t2]))
+#             for term in self.xi.iterkeys():
+#                 if verbose:
+#                     print("Time-averaging %s term."%term)
+#                 self.xi[term] = self.xi[term][t1:t2,:].mean(axis=0)
+#             for term in self.eta.iterkeys():
+#                 if verbose:
+#                     print("Time-averaging %s term."%term)
+#                 self.eta[term] = self.eta[term][t1:t2,:].mean(axis=0)
+#             self._TIME_AVERAGED = True
 
-        Takes the time average of all terms over a specified
-        time interval [tstart, tend]. Use CAUTION with 
-        very large records to avoid a MemoryError.
-        """
-        if self._RUN_AVERAGED or self._TIME_AVERAGED:
-            print("Terms have already been time-averaged.")
-            return
-        else:
-            Time = self.time
-            Time-=Time[0]
-            t1 = np.abs(Time-tstart).argmin()
-            t2 = np.abs(Time-tend).argmin()
-            time = Time[t1:t2]
-            print("Averaging records between days %.2f and %.2f."%(self.time[t1], self.time[t2]))
-            for term in self.xi.iterkeys():
-                if verbose:
-                    print("Time-averaging %s term."%term)
-                self.xi[term] = self.xi[term][t1:t2,:].mean(axis=0)
-            for term in self.eta.iterkeys():
-                if verbose:
-                    print("Time-averaging %s term."%term)
-                self.eta[term] = self.eta[term][t1:t2,:].mean(axis=0)
-            self._TIME_AVERAGED = True
+#     def interp2line(self, ipts):
+#         """
+#         USAGE
+#         -----
+#         m2_terms.interp2line(ipts)
 
-    def interp2line(self, ipts):
-        """
-        USAGE
-        -----
-        m2_terms.interp2line(ipts)
+#         Interpolates the terms to a given line with coordinates 'ipts',
+#         where ipts is a tuple like (lons.ravel(),lats.ravel()). Use CAUTION
+#         with very large records to avoid a MemoryError.
+#         """
+#         pts = (self.x.ravel(),self.y.ravel())
+#         self.nxy = ipts[0].size # Updating array shapes.
 
-        Interpolates the terms to a given line with coordinates 'ipts',
-        where ipts is a tuple like (lons.ravel(),lats.ravel()). Use CAUTION
-        with very large records to avoid a MemoryError.
-        """
-        pts = (self.x.ravel(),self.y.ravel())
-        self.nxy = ipts[0].size # Updating array shapes.
+#         if self._RUN_AVERAGED or self._TIME_AVERAGED:
+#             for term in self.xi.iterkeys():
+#                 print("Interpolating %s term."%term)
+#                 self.xi[term] = spint.griddata(pts, self.xi[term].ravel(), ipts, method='linear')
+#             for term in self.eta.iterkeys():
+#                 print("Interpolating %s term."%term)
+#                 self.eta[term] = spint.griddata(pts, self.eta[term].ravel(), ipts, method='linear')
+#         else:
+#             skel = np.zeros((self.nt, self.nxy))
+#             for term in self.xi.iterkeys():
+#                 xiterm_aux = skel.copy()
+#                 print("\n")
+#                 print("Interpolating %s term."%term)
+#                 for n in xrange(self.nt):
+#                     print("Interpolating record %d/%d to line."%(n+1,self.nt))
+#                     xiterm_aux[n,:] = spint.griddata(pts, self.xi[term][n,:].ravel(), ipts, method='linear')
+#                 self.xi[term] = xiterm_aux
+#             for term in self.eta.iterkeys():
+#                 etaterm_aux = skel.copy()
+#                 print("\n")
+#                 print("Interpolating %s term."%term)
+#                 for n in xrange(self.nt):
+#                     print("Interpolating record %d/%d to line."%(n+1,self.nt))
+#                     etaterm_aux[n,:] = spint.griddata(pts, self.eta[term][n,:].ravel(), ipts, method='linear')
+#                 self.eta[term] = etaterm_aux
 
-        if self._RUN_AVERAGED or self._TIME_AVERAGED:
-            for term in self.xi.iterkeys():
-                print("Interpolating %s term."%term)
-                self.xi[term] = spint.griddata(pts, self.xi[term].ravel(), ipts, method='linear')
-            for term in self.eta.iterkeys():
-                print("Interpolating %s term."%term)
-                self.eta[term] = spint.griddata(pts, self.eta[term].ravel(), ipts, method='linear')
-        else:
-            skel = np.zeros((self.nt, self.nxy))
-            for term in self.xi.iterkeys():
-                xiterm_aux = skel.copy()
-                print("\n")
-                print("Interpolating %s term."%term)
-                for n in xrange(self.nt):
-                    print("Interpolating record %d/%d to line."%(n+1,self.nt))
-                    xiterm_aux[n,:] = spint.griddata(pts, self.xi[term][n,:].ravel(), ipts, method='linear')
-                self.xi[term] = xiterm_aux
-            for term in self.eta.iterkeys():
-                etaterm_aux = skel.copy()
-                print("\n")
-                print("Interpolating %s term."%term)
-                for n in xrange(self.nt):
-                    print("Interpolating record %d/%d to line."%(n+1,self.nt))
-                    etaterm_aux[n,:] = spint.griddata(pts, self.eta[term][n,:].ravel(), ipts, method='linear')
-                self.eta[term] = etaterm_aux
+#     def rotate(self, ang_rot, degrees=False):
+#         """
+#         USAGE
+#         -----
+#         m2_terms.rotate(ang_rot, degrees=False)
 
-    def rotate(self, ang_rot, degrees=False):
-        """
-        USAGE
-        -----
-        m2_terms.rotate(ang_rot, degrees=False)
+#         Rotates all terms from (eastward,northward) axes to arbitrary (x*,y*) axes,
+#         e.g., an isobath-following coordinate system. if 'ang_rot' is a scalar,
+#         all points are rotated by the same angle. If 'ang_rot' is an array the same
+#         shape as the terms, the rotation is done point-wise.
+#         """
+#         if degrees:
+#             ang_rot = ang_rot*np.pi/180. # Degrees to radians.
 
-        Rotates all terms from (eastward,northward) axes to arbitrary (x*,y*) axes,
-        e.g., an isobath-following coordinate system. if 'ang_rot' is a scalar,
-        all points are rotated by the same angle. If 'ang_rot' is an array the same
-        shape as the terms, the rotation is done point-wise.
-        """
-        if degrees:
-            ang_rot = ang_rot*np.pi/180. # Degrees to radians.
+#         if self._RUN_AVERAGED or self._TIME_AVERAGED:
+#             print("Rotating all records to (x*,y*) coordinates.")
+#         else:
+#             pass
 
-        if self._RUN_AVERAGED or self._TIME_AVERAGED:
-            print("Rotating all records to (x*,y*) coordinates.")
-        else:
-            pass
+#         for termx,termy in zip(self.keys_xi,self.keys_eta):
+#             if self._RUN_AVERAGED or self._TIME_AVERAGED:
+#                 try:
+#                     termxi_tmp = self.xi[termx]
+#                     print(termx)
+#                 except KeyError:
+#                     print("Warning: %s not available."%termx)
+#                     continue
 
-        for termx,termy in zip(self.keys_xi,self.keys_eta):
-            if self._RUN_AVERAGED or self._TIME_AVERAGED:
-                try:
-                    termxi_tmp = self.xi[termx]
-                    print(termx)
-                except KeyError:
-                    print("Warning: %s not available."%termx)
-                    continue
+#                 try:
+#                     termeta_tmp = self.eta[termy]
+#                     print(termy)
+#                 except KeyError:
+#                     print("Warning: %s not available."%termy)
+#                     continue
 
-                try:
-                    termeta_tmp = self.eta[termy]
-                    print(termy)
-                except KeyError:
-                    print("Warning: %s not available."%termy)
-                    continue
+#                 self.xi[termx] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
+#                 self.eta[termy] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
+#             else:
+#                 for n in xrange(self.nt):
+#                     print("Rotating record %d/%d to (x*,y*) coordinates."%(n+1,self.nt))
+#                     try:
+#                         termxi_tmp = self.xi[termx][n,:]
+#                         print(termx)
+#                     except KeyError:
+#                         print("Warning: %s not available."%termx)
+#                         continue
 
-                self.xi[termx] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
-                self.eta[termy] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
-            else:
-                for n in xrange(self.nt):
-                    print("Rotating record %d/%d to (x*,y*) coordinates."%(n+1,self.nt))
-                    try:
-                        termxi_tmp = self.xi[termx][n,:]
-                        print(termx)
-                    except KeyError:
-                        print("Warning: %s not available."%termx)
-                        continue
+#                     try:
+#                         termeta_tmp = self.eta[termy][n,:]
+#                         print(termy)
+#                     except KeyError:
+#                         print("Warning: %s not available."%termy)
+#                         continue
 
-                    try:
-                        termeta_tmp = self.eta[termy][n,:]
-                        print(termy)
-                    except KeyError:
-                        print("Warning: %s not available."%termy)
-                        continue
+#                     self.xi[termx][n,:] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
+#                     self.eta[termy][n,:] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
 
-                    self.xi[termx][n,:] = + termxi_tmp*np.cos(ang_rot) + termeta_tmp*np.sin(ang_rot)
-                    self.eta[termy][n,:] = - termxi_tmp*np.sin(ang_rot) + termeta_tmp*np.cos(ang_rot)
-
-    def check_magnitudes(self, print_terms=False):
+#     def check_magnitudes(self, print_terms=False):
         """
         USAGE
         -----
